@@ -1,6 +1,6 @@
 [project]
 name = "create-agentverse-agent"
-version = "0.1.2"
+version = "0.2.0"
 description = "A tool to create Agentverse compatible agents based on uAgents framework."
 readme = "README.md"
 authors = [
@@ -8,12 +8,40 @@ authors = [
 ]
 license = { file = "LICENSE" }
 requires-python = ">=3.12"
+keywords = [
+  "agents",
+  "agentverse",
+  "uagents",
+  "ai-agents",
+  "cli",
+  "code-generator",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Topic :: Software Development :: Code Generators",
+  "Topic :: Software Development :: Libraries",
+  "Environment :: Console",
+  "Typing :: Typed",
+]
 dependencies = [
     "jinja2>=3.1.6",
     "pydantic>=2.12.5",
     "rich>=14.2.0",
     "typer>=0.21.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/tejus3131/create-agentverse-agent"
+Repository = "https://github.com/tejus3131/create-agentverse-agent"
+Issues = "https://github.com/tejus3131/create-agentverse-agent/issues"
+Documentation = "https://github.com/tejus3131/create-agentverse-agent#readme"
+Changelog = "https://github.com/tejus3131/create-agentverse-agent/releases"
+
 
 [project.scripts]
 create-agentverse-agent = "create_agentverse_agent:main"
@@ -79,3 +107,11 @@ disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 ignore_errors = true
+
+[tool.coverage.run]
+source = ["create_agentverse_agent"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
