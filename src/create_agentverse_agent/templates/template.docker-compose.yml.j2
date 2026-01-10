@@ -1,0 +1,10 @@
+services:
+  {{ safe_name }}:
+    build: .
+    container_name: {{ safe_name }}
+    env_file:
+      - .env
+    ports:
+      - "{{agent_port}}:{{agent_port}}"
+      - "{{hosting_port}}:{{hosting_port}}"
+    command: python main.py

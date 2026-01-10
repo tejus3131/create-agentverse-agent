@@ -2,13 +2,13 @@
 
 from importlib.metadata import version
 
-from .core import greet
+from .cli import app
 
 
 def main() -> None:
-    """Main function to run the create_agentverse_agent package."""
-    print(greet())
+    """Main entry point for CLI."""
+    app()
 
 
-__all__ = ["greet"]
+__all__ = ["main"]
 __version__ = version("create-agentverse-agent")

@@ -1,100 +1,102 @@
-# -----------------------------
+# =============================================================================
 # Configuration
-# -----------------------------
-UV              = uv
-UV_RUN          = uv run
-PACKAGE_NAME    = create-agentverse-agent
-DIST_DIR        = dist
+# =============================================================================
 
-# -----------------------------
+UV              := uv
+UV_RUN          := uv run
+PACKAGE_NAME    := create-agentverse-agent
+
+PYTEST_ARGS     := tests/ -v --cov=.
+RUFF_ARGS       := .
+BLACK_ARGS      := .
+MYPY_ARGS       := .
+
+# =============================================================================
 # Phony targets
-# -----------------------------
+# =============================================================================
+
 .PHONY: help \
         install install-dev reinstall \
         lint lint-fix format typecheck test check \
-        build publish login \
-        clean
+        clean clean-caches
 
-# -----------------------------
+# =============================================================================
 # Help
-# -----------------------------
+# =============================================================================
+
 help:
 	@echo ""
+	@echo "Usage: make <target>"
+	@echo ""
 	@echo "Development:"
-	@echo "  make install        Install project dependencies"
-	@echo "  make install-dev    Install project + dev dependencies"
-	@echo "  make reinstall      Reinstall dependencies from scratch"
+	@echo "  install        Install production dependencies"
+	@echo "  install-dev    Install production + dev dependencies"
+	@echo "  reinstall      Clean and reinstall dev dependencies"
 	@echo ""
 	@echo "Quality:"
-	@echo "  make lint           Run ruff lint checks"
-	@echo "  make lint-fix       Run ruff with auto-fix"
-	@echo "  make format         Format code with black"
-	@echo "  make typecheck      Run mypy"
-	@echo "  make test           Run pytest"
-	@echo "  make check          Full check (lint → format → typecheck → test)"
-	@echo ""
-	@echo "Release:"
-	@echo "  make build          Build wheel + sdist"
-	@echo "  make publish        Publish to PyPI"
-	@echo "  make login          Login to PyPI (uv auth)"
+	@echo "  lint           Run ruff lint checks"
+	@echo "  lint-fix       Run ruff with auto-fix"
+	@echo "  format         Format code with black"
+	@echo "  typecheck      Run mypy"
+	@echo "  test           Run pytest with coverage"
+	@echo "  check          Run full quality pipeline"
 	@echo ""
 	@echo "Maintenance:"
-	@echo "  make clean          Remove build and cache artifacts"
+	@echo "  clean          Remove caches and build artifacts"
 	@echo ""
 
-# -----------------------------
-# Install
-# -----------------------------
+# =============================================================================
+# Dependency management
+# =============================================================================
+
 install:
-	$(UV) sync
+	@echo "Installing dependencies..."
+	@$(UV) sync
 
 install-dev:
-	$(UV) sync --dev
+	@echo "Installing dev dependencies..."
+	@$(UV) sync --dev
 
 reinstall: clean
-	$(UV) sync --dev
+	@echo "Reinstalling dependencies..."
+	@$(UV) sync --dev
 
-# -----------------------------
-# Quality
-# -----------------------------
+# =============================================================================
+# Quality checks
+# =============================================================================
+
 lint:
-	$(UV_RUN) ruff check .
+	@echo "Running ruff lint..."
+	@$(UV_RUN) ruff check $(RUFF_ARGS)
 
 lint-fix:
-	$(UV_RUN) ruff check . --fix
+	@echo "Running ruff with auto-fix..."
+	@$(UV_RUN) ruff check $(RUFF_ARGS) --fix
 
 format:
-	$(UV_RUN) black .
+	@echo "Formatting with black..."
+	@$(UV_RUN) black $(BLACK_ARGS)
 
 typecheck:
-	$(UV_RUN) mypy .
+	@echo "Running mypy..."
+	@$(UV_RUN) mypy $(MYPY_ARGS)
 
 test:
-	$(UV_RUN) pytest
+	@echo "Running tests..."
+	@$(UV_RUN) pytest $(PYTEST_ARGS)
 
 check: lint-fix format typecheck test
+	@echo ""
+	@echo "✅ All checks passed"
 
-# -----------------------------
-# Build & Publish
-# -----------------------------
-build: clean
-	$(UV) build
-
-login:
-	$(UV) auth login
-
-publish: check build
-	$(UV) publish
-
-# -----------------------------
+# =============================================================================
 # Cleanup
-# -----------------------------
-clean:
-	rm -rf \
-		.mypy_cache \
-		.ruff_cache \
-		.pytest_cache \
-		__pycache__ \
-		$(DIST_DIR) \
-		build
-	find . -type d -name "__pycache__" -exec rm -rf {} +
+# =============================================================================
+
+clean: clean-caches
+	@echo "Clean complete."
+
+clean-caches:
+	@echo "Removing caches..."
+	@rm -rf .mypy_cache .ruff_cache .pytest_cache
+	@find . -type d -name "__pycache__" -prune -exec rm -rf {} +

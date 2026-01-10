@@ -1,0 +1,27 @@
+
+import asyncio
+from logging import Logger
+from typing import Callable
+
+async def chat(
+    session_id: str,
+    user_id: str,
+    message: str,
+    logger: Logger,
+    send_progress: Callable[[str], None]
+) -> str:
+    """
+    Example chat function with progress updates.
+    Replace this with your actual chat/AI logic.
+    """
+    logger.info(f"[{session_id}] Received message from user {user_id}: {message}")
+    send_progress("Starting processing... 0% complete")
+
+    PROGRESS_COUNT = 3
+
+    for i in range(PROGRESS_COUNT):
+        await asyncio.sleep(5) # Simulate processing time
+        send_progress(f"Processing... {((i + 1) / PROGRESS_COUNT) * 100:.0f}% complete")
+        logger.info(f"[{session_id}] Processing... {((i + 1) / PROGRESS_COUNT) * 100:.0f}% complete")
+
+    return f"Hello, {user_id}! I am {{agent_name}}"

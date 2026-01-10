@@ -1,0 +1,637 @@
+from __future__ import annotations
+import asyncio
+from datetime import datetime, timezone
+from uuid import uuid4
+from enum import Enum
+from typing import Callable, Coroutine
+from dotenv import load_dotenv
+from logging import Logger, DEBUG, INFO
+import time
+from pathlib import Path
+
+from uagents import Agent, Protocol, Context, Model
+from uagents.experimental.quota import QuotaProtocol, RateLimit
+from uagents_core.contrib.protocols.chat import (
+    ChatMessage,
+    ChatAcknowledgement,
+    TextContent,
+    ResourceContent,
+    MetadataContent,
+    StartSessionContent,
+    EndSessionContent,
+    StartStreamContent,
+    EndStreamContent,
+    chat_protocol_spec,
+)
+from uagents_core.utils.registration import (
+    register_chat_agent,
+    RegistrationRequestCredentials,
+)
+from pydantic import BaseModel, Field, ConfigDict
+import os
+
+# import the chat function
+from agent import chat
+
+# Load environment variables
+load_dotenv()
+
+# =============================================================================
+# Configuration & Constants
+# =============================================================================
+
+ENV = os.getenv("ENV", "development")
+DEBUG_ACTIVE = ENV != "production"
+
+LOG_LEVEL = DEBUG if DEBUG_ACTIVE else INFO
+README_PATH = Path(__file__).parent / "README.md"
+
+AGENT_NAME = os.getenv("AGENT_NAME", "{{agent_name}}")
+AGENT_HANDLE = os.getenv("AGENT_HANDLE", "{{safe_name}}")
+AGENT_DESCRIPTION = "{{agent_description}}"
+AGENT_README = README_PATH.read_text() if README_PATH.exists() else "No README available."
+AGENT_PORT = int(os.getenv("AGENT_PORT", "{{agent_port}}"))
+
+AGENT_SEED_PHRASE = os.getenv(
+    "AGENT_SEED_PHRASE", "{{agent_seed_phrase}}")
+
+HOSTING_ENDPOINT = os.getenv("HOSTING_ENDPOINT", "{{hosting_endpoint}}")
+AGENT_ROUTE = os.getenv(
+    "AGENT_ROUTE", "{{agent_route}}")
+
+AGENTVERSE_API_KEY = os.getenv("AGENTVERSE_API_KEY")
+
+# Message processing configuration
+MAX_PROCESSED_MESSAGES = 100
+PROCESSED_MESSAGE_TTL_MINUTES = 60
+CLEANUP_INTERVAL_SECONDS = 300
+
+# =============================================================================
+# Validate critical configurations
+# =============================================================================
+assert AGENTVERSE_API_KEY, "AGENTVERSE_API_KEY is required to register with Agentverse."
+assert AGENT_SEED_PHRASE, "AGENT_SEED_PHRASE is required to register with Agentverse."
+
+
+# =============================================================================
+# Health Check Models
+# =============================================================================
+
+class HealthCheck(Model):
+    pass
+
+
+class HealthStatus(str, Enum):
+    HEALTHY = "healthy"
+    UNHEALTHY = "unhealthy"
+
+
+class AgentHealth(Model):
+    agent_name: str
+    status: HealthStatus
+
+
+# =============================================================================
+# Message Manager
+# =============================================================================
+
+class MessageType(str, Enum):
+    PROGRESS = "progress"
+    RESPONSE = "response"
+
+
+class ActiveCall(BaseModel):
+    """Lightweight container for active call data."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    ctx: Context
+    sender: str
+    msg_id: str
+    timestamp: datetime
+    task: asyncio.Task[None] | None = None
+    message_queue: asyncio.Queue[tuple[MessageType, str] | None] = Field(
+        default_factory=lambda: asyncio.Queue())
+    sender_task: asyncio.Task[None] | None = None
+
+
+class MessageManager(BaseModel):
+    """
+    Production-ready message manager with parallel processing capabilities.
+    Now with guaranteed message ordering.
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    chat_func: Callable[[str, str, str, Logger, Callable[[str], None]], str] | Callable[[
+        str, str, str, Logger, Callable[[str], None]], Coroutine[None, None, str]]
+
+    processed_messages: dict[str, datetime] = Field(default_factory=dict)
+    message_order: list[str] = Field(default_factory=list)
+    active_calls: dict[str, ActiveCall] = Field(default_factory=dict)
+
+    max_processed_messages: int = Field(default=MAX_PROCESSED_MESSAGES)
+    processed_message_ttl_minutes: int = Field(
+        default=PROCESSED_MESSAGE_TTL_MINUTES)
+
+    async def _message_sender_worker(self, key: str) -> None:
+        """
+        Worker task that sends messages from the queue in order.
+        This ensures all progress messages are sent before the final response.
+        """
+        active_call = self.active_calls.get(key)
+        if not active_call:
+            return
+
+        try:
+            while True:
+                # Get message from queue (blocks until available)
+                message_data = await active_call.message_queue.get()
+
+                # None is our sentinel value to stop the worker
+                if message_data is None:
+                    break
+
+                msg_type, content = message_data
+
+                try:
+                    msg = ChatMessage(
+                        timestamp=datetime.now(timezone.utc),
+                        msg_id=uuid4(),
+                        content=[TextContent(type="text", text=content)]
+                    )
+                    await active_call.ctx.send(active_call.sender, msg)
+
+                    if msg_type == "progress":
+                        active_call.ctx.logger.debug(
+                            f"Progress update sent for message {active_call.msg_id}"
+                        )
+                    else:  # final response
+                        active_call.ctx.logger.info(
+                            f"[{active_call.ctx.session}] Response sent for message {active_call.msg_id}"
+                        )
+                except Exception as e:
+                    active_call.ctx.logger.error(
+                        f"Failed to send {msg_type} message: {e}"
+                    )
+                finally:
+                    active_call.message_queue.task_done()
+
+        except asyncio.CancelledError:
+            active_call.ctx.logger.warning(
+                f"Message sender worker cancelled for {key}"
+            )
+        except Exception as e:
+            active_call.ctx.logger.error(
+                f"Error in message sender worker: {e}", exc_info=True
+            )
+
+    async def _send_acknowledgement(
+        self,
+        ctx: Context,
+        sender: str,
+        msg: ChatMessage
+    ) -> None:
+        """Send acknowledgement for received message."""
+        try:
+            ack = ChatAcknowledgement(
+                timestamp=datetime.now(timezone.utc),
+                acknowledged_msg_id=msg.msg_id
+            )
+            await ctx.send(sender, ack)
+            ctx.logger.debug(f"Sent ACK for message {msg.msg_id} to {sender}")
+        except Exception as e:
+            ctx.logger.error(
+                f"Failed to send acknowledgement to {sender}: {e}")
+
+    def _is_already_processed(self, key: str) -> bool:
+        """Check if message was already processed. O(1) lookup."""
+        return key in self.processed_messages
+
+    def _generate_key(self, ctx: Context, sender: str, msg: ChatMessage) -> str:
+        """Generate unique key for message deduplication."""
+        return f"{sender}:{ctx.session}:{msg.msg_id}"
+
+    async def _extract_message_content(
+        self,
+        ctx: Context,
+        sender: str,
+        msg: ChatMessage
+    ) -> str:
+        """Extract text content from message and log metadata."""
+        text_parts: list[str] = []
+
+        for item in msg.content:
+            if isinstance(item, TextContent):
+                text_parts.append(item.text)
+
+            elif isinstance(item, ResourceContent) and item.resource:
+                resources = item.resource if isinstance(
+                    item.resource, list) else [item.resource]
+                for res in resources:
+                    text_parts.append(
+                        f"Resource: {res.uri}\nMetadata: {res.metadata}\n")
+
+            elif isinstance(item, MetadataContent) and item.metadata:
+                ctx.logger.debug(
+                    f"[{ctx.session}] Metadata from {sender}: {item.metadata}")
+
+            elif isinstance(item, StartSessionContent):
+                ctx.logger.info(
+                    f"[{ctx.session}] Session started with {sender}")
+
+            elif isinstance(item, EndSessionContent):
+                ctx.logger.info(f"[{ctx.session}] Session ended with {sender}")
+
+            elif isinstance(item, StartStreamContent):
+                ctx.logger.debug(
+                    f"[{ctx.session}] Stream started: {item.stream_id}")
+
+            elif isinstance(item, EndStreamContent):
+                ctx.logger.debug(
+                    f"[{ctx.session}] Stream ended: {item.stream_id}")
+
+        return "".join(text_parts)
+
+    async def _execute_chat_function(
+        self,
+        session_id: str,
+        sender: str,
+        message: str,
+        key: str,
+        logger: Logger
+    ) -> tuple[bool, str]:
+        """
+        Execute the chat function with proper error handling.
+        Supports both sync and async functions.
+        """
+        start_time = time.time()
+
+        try:
+            def progress_callback(update: str) -> None:
+                """
+                Synchronous progress callback that queues messages.
+                The queue ensures proper ordering.
+                """
+                active_call = self.active_calls.get(key)
+                if active_call:
+                    # Put progress message in queue (non-blocking)
+                    active_call.message_queue.put_nowait(
+                        (MessageType.PROGRESS, update))
+
+            if asyncio.iscoroutinefunction(self.chat_func):
+                response = await self.chat_func(session_id, sender, message, logger, progress_callback)
+            else:
+                loop = asyncio.get_running_loop()
+                response = await loop.run_in_executor(
+                    None, self.chat_func, session_id, sender, message, logger, progress_callback
+                )
+
+            elapsed = time.time() - start_time
+
+            if not isinstance(response, str):
+                logger.error(
+                    f"Chat function returned non-string type: {type(response)}")
+                return False, "Chat function did not return a string response."
+
+            logger.info(
+                f"[{session_id}] Chat function completed in {elapsed:.2f}s")
+            return True, response
+
+        except asyncio.CancelledError:
+            logger.warning(
+                f"[{session_id}] Chat function cancelled for {sender}")
+            raise
+        except Exception as e:
+            elapsed = time.time() - start_time
+            logger.error(
+                f"[{session_id}] Chat function failed after {elapsed:.2f}s: {e}", exc_info=True)
+            return False, f"Error processing message: {str(e)}"
+
+    async def _send_response(self, key: str, response_text: str) -> None:
+        """
+        Queue final response and wait for all messages to be sent.
+        This ensures proper ordering: all progress messages, then final response.
+        """
+        active_call = self.active_calls.get(key)
+        if not active_call:
+            return
+
+        try:
+            # Queue the final response
+            await active_call.message_queue.put((MessageType.RESPONSE, response_text))
+
+            # Send sentinel to stop the worker
+            await active_call.message_queue.put(None)
+
+            # Wait for all queued messages to be sent
+            await active_call.message_queue.join()
+
+            # Wait for sender task to complete
+            if active_call.sender_task:
+                await active_call.sender_task
+
+        except Exception as e:
+            active_call.ctx.logger.error(f"Failed to send response: {e}")
+        finally:
+            # Always cleanup, even if send fails
+            self.active_calls.pop(key, None)
+
+    async def _process_and_respond(
+        self,
+        key: str,
+        session_id: str,
+        sender: str,
+        message: str,
+        ctx: Context
+    ) -> None:
+        """
+        Background task to process message and send response.
+        This runs in parallel for multiple messages.
+        """
+        try:
+            ctx.logger.info(f"[{session_id}] Processing message from {sender}")
+
+            success, content = await self._execute_chat_function(
+                session_id, sender, message, key, ctx.logger
+            )
+
+            await self._send_response(key, content)
+
+            if not success:
+                ctx.logger.error(
+                    f"[{session_id}] Message processing failed: {content}")
+                await self._remove_message(key)
+
+        except asyncio.CancelledError:
+            ctx.logger.warning(f"[{session_id}] Processing task cancelled")
+            await self._remove_message(key)
+        except Exception as e:
+            ctx.logger.error(
+                f"[{session_id}] Unexpected error in background task: {e}", exc_info=True)
+            await self._remove_message(key)
+
+    async def process_message(
+        self,
+        ctx: Context,
+        sender: str,
+        msg: ChatMessage
+    ) -> None:
+        """
+        Main entry point for message processing.
+        Handles deduplication, tracking, and spawns background task.
+        """
+        # Always acknowledge first
+        await self._send_acknowledgement(ctx, sender, msg)
+
+        key = self._generate_key(ctx, sender, msg)
+
+        # Deduplicate
+        if self._is_already_processed(key):
+            ctx.logger.debug(f"Duplicate message ignored: {msg.msg_id}")
+            return
+
+        now = datetime.now(timezone.utc)
+        content = await self._extract_message_content(ctx, sender, msg)
+
+        # Track processed message
+        self.processed_messages[key] = now
+        self.message_order.append(key)
+
+        # Create active call entry with message queue
+        active_call = ActiveCall(
+            ctx=ctx,
+            sender=sender,
+            msg_id=str(msg.msg_id),
+            timestamp=now
+        )
+
+        # Start the message sender worker
+        active_call.sender_task = asyncio.create_task(
+            self._message_sender_worker(key)
+        )
+
+        # Start the processing task
+        active_call.task = asyncio.create_task(
+            self._process_and_respond(
+                key, str(ctx.session), sender, content, ctx)
+        )
+
+        self.active_calls[key] = active_call
+
+        # Cleanup old messages if limit exceeded
+        while len(self.processed_messages) > self.max_processed_messages:
+            old_key = self.message_order.pop(0)
+            self.processed_messages.pop(old_key, None)
+
+            # Cancel and cleanup active call if exists
+            old_call = self.active_calls.pop(old_key, None)
+            if old_call:
+                if old_call.task and not old_call.task.done():
+                    old_call.task.cancel()
+                if old_call.sender_task and not old_call.sender_task.done():
+                    old_call.sender_task.cancel()
+                ctx.logger.warning(
+                    f"Cancelled old task due to limit: {old_key}")
+
+        ctx.logger.info(
+            f"[{ctx.session}] Message queued for processing | "
+            f"Active: {len(self.active_calls)} | Tracked: {len(self.processed_messages)}"
+        )
+
+    async def _remove_message(self, key: str) -> None:
+        """Remove message from tracking (called on errors)."""
+        active_call = self.active_calls.pop(key, None)
+        if active_call:
+            if active_call.task and not active_call.task.done():
+                active_call.task.cancel()
+            if active_call.sender_task and not active_call.sender_task.done():
+                active_call.sender_task.cancel()
+
+        self.processed_messages.pop(key, None)
+        if key in self.message_order:
+            self.message_order.remove(key)
+
+    async def cleanup_messages(self) -> None:
+        """
+        Periodic cleanup of expired messages.
+        Removes messages older than TTL and completed tasks.
+        """
+        now = datetime.now(timezone.utc)
+        ttl_seconds = self.processed_message_ttl_minutes * 60
+
+        # Cleanup expired messages
+        keys_to_remove: list[str] = []
+        for key in self.message_order:
+            timestamp = self.processed_messages.get(key)
+            if not timestamp or (now - timestamp).total_seconds() > ttl_seconds:
+                keys_to_remove.append(key)
+            else:
+                break
+
+        for key in keys_to_remove:
+            self.processed_messages.pop(key, None)
+            self.message_order.remove(key)
+
+            # Cancel active call if still running
+            active_call = self.active_calls.pop(key, None)
+            if active_call:
+                if active_call.task and not active_call.task.done():
+                    active_call.task.cancel()
+                if active_call.sender_task and not active_call.sender_task.done():
+                    active_call.sender_task.cancel()
+
+        # Cleanup completed tasks
+        completed_keys = [
+            key for key, call in self.active_calls.items()
+            if call.task and call.task.done() and
+            call.sender_task and call.sender_task.done()
+        ]
+        for key in completed_keys:
+            self.active_calls.pop(key, None)
+
+        if keys_to_remove or completed_keys:
+            print(f"Cleanup: Removed {len(keys_to_remove)} expired, "
+                  f"{len(completed_keys)} completed | "
+                  f"Active: {len(self.active_calls)}, Tracked: {len(self.processed_messages)}")
+
+# Initialize message manager
+_message_manager = MessageManager(chat_func=chat)
+
+
+# =============================================================================
+# Agent Setup
+# =============================================================================
+
+agent = Agent(
+    name=AGENT_NAME,
+    seed=AGENT_SEED_PHRASE,
+    port=AGENT_PORT,
+    mailbox=True,
+    publish_agent_details=True,
+    handle=AGENT_HANDLE,
+    log_level=LOG_LEVEL,
+    readme_path=str(README_PATH) if README_PATH.exists() else None,
+    description=AGENT_DESCRIPTION,
+    network="mainnet" if ENV == "production" else "testnet",
+)
+
+# Rate limiting protocol
+proto = QuotaProtocol(
+    storage_reference=agent.storage,
+    name="RateLimitProtocol",
+    version="0.1.0",
+    default_rate_limit=RateLimit(window_size_minutes=60, max_requests=30),
+)
+
+# Health monitoring protocol
+health_protocol = QuotaProtocol(
+    storage_reference=agent.storage,
+    name="HealthProtocol",
+    version="0.1.0"
+)
+
+
+@health_protocol.on_message(HealthCheck, replies={AgentHealth})
+async def handle_health_check(ctx: Context, sender: str, msg: HealthCheck):
+    """Health check endpoint."""
+    await ctx.send(
+        sender,
+        AgentHealth(agent_name=AGENT_NAME, status=HealthStatus.HEALTHY)
+    )
+    ctx.logger.debug(f"Health check from {sender}")
+
+# Chat protocol
+chat_proto = Protocol(spec=chat_protocol_spec)
+
+
+# =============================================================================
+# Event Handlers
+# =============================================================================
+
+@agent.on_event("startup")
+async def startup_handler(ctx: Context):
+    """Initialize agent on startup."""
+
+    ctx.logger.setLevel(LOG_LEVEL)
+
+    ctx.logger.info(f"🚀 Starting {ctx.agent.name}")
+    ctx.logger.info(f"📍 Address: {ctx.agent.address}")
+    ctx.logger.info(
+        f"🔧 Config: Max messages={MAX_PROCESSED_MESSAGES}, TTL={PROCESSED_MESSAGE_TTL_MINUTES}m")
+
+    ctx.logger.debug(
+        (
+            "Registering agent with following details:\n"
+            f"Name: {AGENT_NAME}\n"
+            f"Endpoint: {agent._endpoints[0].url}\n"
+            f"Description: {AGENT_DESCRIPTION}\n"
+            f"README: {AGENT_README[:60]}...\n"
+        )
+    )
+
+    # Register with Agentverse
+    if AGENTVERSE_API_KEY and AGENT_SEED_PHRASE:
+        try:
+            register_chat_agent(
+                AGENT_NAME,
+                agent._endpoints[0].url,
+                active=True,
+                credentials=RegistrationRequestCredentials(
+                    agentverse_api_key=AGENTVERSE_API_KEY,
+                    agent_seed_phrase=AGENT_SEED_PHRASE,
+                ),
+                readme=AGENT_README,
+                description=AGENT_DESCRIPTION,
+            )
+            ctx.logger.info("✅ Registered with Agentverse")
+        except Exception as e:
+            ctx.logger.error(f"❌ Agentverse registration failed: {e}")
+    else:
+        ctx.logger.warning(
+            "⚠️ Skipping Agentverse registration (missing credentials)")
+
+
+@agent.on_interval(period=CLEANUP_INTERVAL_SECONDS)
+async def cleanup_processed_messages_handler(ctx: Context):
+    """Periodic cleanup of expired messages."""
+    await _message_manager.cleanup_messages()
+
+
+@chat_proto.on_message(ChatMessage)
+async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
+    """Handle incoming chat messages with parallel processing."""
+    await _message_manager.process_message(ctx, sender, msg)
+
+
+@chat_proto.on_message(ChatAcknowledgement)
+async def handle_acknowledgement(ctx: Context, sender: str, msg: ChatAcknowledgement):
+    """Handle received acknowledgements."""
+    ctx.logger.debug(
+        f"ACK received from {sender} for {msg.acknowledged_msg_id}")
+
+
+@agent.on_event("shutdown")
+async def shutdown_handler(ctx: Context):
+    """Cleanup on shutdown."""
+    ctx.logger.info("🛑 Shutting down agent...")
+
+    # Cancel all active tasks
+    active_count = len(_message_manager.active_calls)
+    for _, active_call in list(_message_manager.active_calls.items()):
+        if active_call.task and not active_call.task.done():
+            active_call.task.cancel()
+
+    if active_count > 0:
+        ctx.logger.info(f"Cancelled {active_count} active tasks")
+
+    ctx.logger.info("✅ Shutdown complete")
+
+
+# Include all protocols
+agent.include(health_protocol, publish_manifest=True)
+agent.include(chat_proto, publish_manifest=True)
+agent.include(proto, publish_manifest=True)
+
+
+if __name__ == "__main__":
+    agent.run()
