@@ -157,7 +157,10 @@ def main(
         success_text.append(f"   cd {project_path}\n", style="bold white")
         success_text.append("\n")
         success_text.append("2. Start your agent\n", style="bold yellow")
-        success_text.append("   make run\n", style="bold white")
+        success_text.append(
+            f"   make {"run" if config.is_api_keys_provided() else "dev"}\n",
+            style="bold white",
+        )
         success_text.append("\n")
         success_text.append(
             "─────────────────────────────────────────────────────────\n",

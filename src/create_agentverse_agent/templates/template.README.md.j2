@@ -15,4 +15,4 @@ This is the README for the **{{ display_name }}** agent created using the Create
 - Use `make install` to install dependencies.
 
 ## Running the Agent
-- Use `make run` to start the agent.
+- Use `make {{ "run" if agentverse_api_key else "dev" }}` to start the agent.

@@ -51,3 +51,8 @@ run: install build up
 env:
 	@echo "🐍 Activating Poetry virtual environment..."
 	poetry env activate
+
+# Run the application inside the Poetry environment
+dev: install
+	@echo "🚀 Running application inside Poetry environment..."
+	poetry run python main.py

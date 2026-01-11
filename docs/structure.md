@@ -92,7 +92,8 @@ Common commands for development:
 ```bash
 make install   # Install dependencies
 make env       # Activate virtual environment
-make run       # Start the agent
+make dev       # Start the agent in poetry environment
+make run       # Start agent in docker container (requires AGENTVERSE_API_KEY in .env)
 ```
 
 ### `Dockerfile`

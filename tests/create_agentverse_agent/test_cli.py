@@ -789,7 +789,7 @@ class TestCLIOutput:
 
         assert result.exit_code == 0
         assert "Next Steps" in result.stdout
-        assert "make run" in result.stdout
+        assert "make dev" in result.stdout
 
     def test_project_location_shown(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path

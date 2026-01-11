@@ -89,7 +89,7 @@ Edit `docker-compose.yml` for:
 ### Local Development
 
 ```bash
-make run
+make dev
 # or
 poetry run python main.py
 ```
