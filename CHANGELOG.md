@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ---
 
+## [0.2.2]
+
+- Added initial docs
+- Updated tests that failed in previous ci
+
+---
+
 ## [0.2.1]
 
 - New context module for improved state management
