@@ -10,7 +10,7 @@
 [![Ruff](https://img.shields.io/badge/lint-ruff-red)](https://docs.astral.sh/ruff/)
 [![Mypy](https://img.shields.io/badge/type%20check-mypy-blue)](https://mypy.readthedocs.io/)
 
-> 📖 Documentation: https://tejus3131.github.io/create-agentverse-agent/
+> 📖 **Full Documentation:** [tejus3131.github.io/create-agentverse-agent](https://tejus3131.github.io/create-agentverse-agent/)
 
 A CLI tool to scaffold **production-ready uAgents** with best practices baked in — in seconds.
 
@@ -197,6 +197,19 @@ The scaffold is designed to be **production-ready from day one**, not a demo:
 * Minimal but extensible structure
 
 You can ship this, not just demo it.
+
+---
+
+## 📚 Documentation
+
+Full documentation is available at **[tejus3131.github.io/create-agentverse-agent](https://tejus3131.github.io/create-agentverse-agent/)**
+
+| Guide | Description |
+|-------|-------------|
+| [Installation](https://tejus3131.github.io/create-agentverse-agent/installation) | Multiple installation methods |
+| [Usage](https://tejus3131.github.io/create-agentverse-agent/usage) | CLI options and examples |
+| [Generated Structure](https://tejus3131.github.io/create-agentverse-agent/structure) | What gets created |
+| [Configuration](https://tejus3131.github.io/create-agentverse-agent/configuration) | Customization options |
 
 ---
 

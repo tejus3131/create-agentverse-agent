@@ -1,5 +1,6 @@
 """Comprehensive tests for the CLI module."""
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,11 @@ from typer.testing import CliRunner
 
 from create_agentverse_agent import cli, prompts, scaffold, templates
 from create_agentverse_agent.context import AgentContext
+
+
+def strip_ansi(text: str) -> str:
+    """Strip ANSI escape codes from text."""
+    return re.sub(r"\x1b\[[0-9;]*m", "", text)
 
 
 class TestVersionCallback:
@@ -565,12 +571,13 @@ class TestCLIHelp:
         """Test that help shows all options."""
         runner = CliRunner()
         result = runner.invoke(cli.app, ["--help"])
+        output = strip_ansi(result.stdout)
 
-        assert "--default" in result.stdout
-        assert "--advanced" in result.stdout
-        assert "--overwrite" in result.stdout
-        assert "--version" in result.stdout
-        assert "--debug" in result.stdout
+        assert "--default" in output
+        assert "--advanced" in output
+        assert "--overwrite" in output
+        assert "--version" in output
+        assert "--debug" in output
 
 
 class TestCLIErrorHandling:

@@ -1,0 +1,26 @@
+theme: jekyll-theme-minimal
+
+title: create-agentverse-agent
+description: A CLI tool to scaffold production-ready uAgents with best practices baked in
+
+repository: tejus3131/create-agentverse-agent
+author:
+  name: Tejus Gupta
+  url: https://tejusgupta.dev
+  email: hello@tejusgupta.dev
+
+markdown: kramdown
+
+exclude:
+  - .github/
+  - src/
+  - tests/
+  - pyproject.toml
+  - uv.lock
+  - Makefile
+  - README.md
+  - CHANGELOG.md
+  - CONTRIBUTING.md
+  - CODE_OF_CONDUCT.md
+  - SECURITY.md
+  - LICENSE
