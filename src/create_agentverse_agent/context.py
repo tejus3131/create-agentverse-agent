@@ -140,6 +140,76 @@ class AgentContext(BaseModel):
     API key for AgentVerse services in JWT format. Must be at least 20 characters long.
     """
 
+    max_processed_messages: int = Field(
+        default=1000,
+        ge=1,
+        title="Max Processed Messages",
+        description="Maximum number of processed messages to track",
+        examples=[1000, 5000],
+        frozen=False,
+        strict=True,
+        repr=True,
+    )
+    """
+    Maximum number of processed messages to keep in memory.
+    """
+
+    processed_message_ttl_minutes: int = Field(
+        default=60,
+        ge=1,
+        title="Processed Message TTL",
+        description="TTL for processed messages in minutes",
+        examples=[60, 120],
+        frozen=False,
+        strict=True,
+        repr=True,
+    )
+    """
+    Time-to-live for processed messages in minutes.
+    """
+
+    cleanup_interval_seconds: int = Field(
+        default=300,
+        ge=10,
+        title="Cleanup Interval",
+        description="Interval for cleanup tasks in seconds",
+        examples=[300, 600],
+        frozen=False,
+        strict=True,
+        repr=True,
+    )
+    """
+    Interval in seconds for running cleanup tasks.
+    """
+
+    rate_limit_max_requests: int = Field(
+        default=30,
+        ge=1,
+        title="Rate Limit Max Requests",
+        description="Maximum requests allowed",
+        examples=[100, 500],
+        frozen=False,
+        strict=True,
+        repr=True,
+    )
+    """
+    Maximum number of requests allowed within the rate limit window.
+    """
+
+    rate_limit_window_minutes: int = Field(
+        default=60,
+        ge=1,
+        title="Rate Limit Window",
+        description="Rate limit window in minutes",
+        examples=[60, 120],
+        frozen=False,
+        strict=True,
+        repr=True,
+    )
+    """
+    Time window in minutes for rate limiting.
+    """
+
     def model_post_init(self, __context: Any) -> None:
         """Log context initialization after model is created."""
         logger.info(
@@ -205,6 +275,7 @@ class AgentContext(BaseModel):
         data = super().model_dump(**kwargs)
         data.update(
             {
+                "display_name": self.display_name,
                 "safe_name": self.safe_name,
                 "project_path": str(self.project_path),
                 "agent_route": self.agent_route,

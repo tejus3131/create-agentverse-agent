@@ -146,49 +146,43 @@ def main(
             logger.debug(f"Project created at: {project_path.absolute()}")
 
         # Success message with clear next steps
-        if not default:
-            console.clear()
-
         success_text = Text()
-        success_text.append("🎉 Agent Created Successfully!", style="bold white")
+
+        success_text.append("📍 Project Location\n", style="bold cyan")
+        success_text.append(f"   {project_path.absolute()}\n", style="bold white")
+        success_text.append("\n")
+        success_text.append("🚀 Next Steps\n", style="bold cyan")
+        success_text.append("\n")
+        success_text.append("1. Navigate to your project\n", style="bold yellow")
+        success_text.append(f"   cd {project_path}\n", style="bold white")
+        success_text.append("\n")
+        success_text.append("2. Start your agent\n", style="bold yellow")
+        success_text.append("   make run\n", style="bold white")
+        success_text.append("\n")
+        success_text.append(
+            "─────────────────────────────────────────────────────────\n",
+            style="dim blue",
+        )
+        success_text.append(
+            "💡 Tip: Run 'make' to see available commands", style="dim blue"
+        )
+
+        # Show hint about missing API keys
+        if config.agentverse_api_key is None:
+            success_text.append("\n\n")
+            success_text.append(
+                "⚠️  Don't forget to add your AGENTVERSE_API_KEY to the .env file",
+                style="yellow",
+            )
 
         success_panel = Panel(
             success_text,
+            title="Agent Created Successfully!",
             border_style="green",
             padding=(1, 2),
         )
+
         console.print(success_panel)
-
-        console.print()
-        console.print("[bold cyan]   📍 Project Location[/bold cyan]")
-        console.print(f"      [bold white]{project_path.absolute()}[/bold white]")
-
-        console.print()
-        console.print("[bold cyan]   🚀 Next Steps[/bold cyan]")
-
-        step = 1
-
-        if not config.is_api_keys_provided():
-            console.print()
-            console.print(f"   [bold yellow]{step}. Add your API keys[/bold yellow]")
-            console.print("      Edit [white].env[/white] in your project directory:")
-            console.print()
-            if not config.agentverse_api_key:
-                console.print("      [dim white]• AGENTVERSE_API_KEY[/dim white]")
-            step += 1
-
-        console.print()
-        console.print(f"   [bold yellow]{step}. Start your agent[/bold yellow]")
-        console.print()
-        console.print("      [bold white]docker-compose up[/bold white]")
-
-        console.print()
-        console.print(
-            "[dim blue]   ─────────────────────────────────────────────────────────[/dim blue]"
-        )
-        console.print(
-            "[dim blue]   💡 Tip: Use 'docker-compose up -d' to run in background[/dim blue]"
-        )
         console.print()
 
         logger.info("Agent created successfully")

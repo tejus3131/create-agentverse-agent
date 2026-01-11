@@ -1,13 +1,16 @@
-![PyPI](https://img.shields.io/pypi/v/create-agentverse-agent)
-![Python](https://img.shields.io/pypi/pyversions/create-agentverse-agent)
-![License](https://img.shields.io/pypi/l/create-agentverse-agent)
-![CI](https://github.com/tejus3131/create-agentverse-agent/actions/workflows/ci.yml/badge.svg)
-![Black](https://img.shields.io/badge/code%20style-black-000000.svg)
-![Ruff](https://img.shields.io/badge/lint-ruff-red)
-![Mypy](https://img.shields.io/badge/type%20check-mypy-blue)
-![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
-
 # create-agentverse-agent
+
+[![Fetch.ai](https://img.shields.io/badge/Fetch.ai-Ecosystem-blue?logo=fetch.ai&logoColor=white)](https://fetch.ai)
+[![PyPI](https://img.shields.io/pypi/v/create-agentverse-agent?cacheSeconds=300)](https://pypi.org/project/create-agentverse-agent/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/create-agentverse-agent?cacheSeconds=300)](https://pypi.org/project/create-agentverse-agent/)
+[![License](https://img.shields.io/github/license/tejus3131/create-agentverse-agent)](LICENSE)
+[![CI](https://github.com/tejus3131/create-agentverse-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/tejus3131/create-agentverse-agent/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-github--pages-blue)](https://tejus3131.github.io/create-agentverse-agent/)
+[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://black.readthedocs.io/)
+[![Ruff](https://img.shields.io/badge/lint-ruff-red)](https://docs.astral.sh/ruff/)
+[![Mypy](https://img.shields.io/badge/type%20check-mypy-blue)](https://mypy.readthedocs.io/)
+
+> 📖 Documentation: https://tejus3131.github.io/create-agentverse-agent/
 
 A CLI tool to scaffold **production-ready uAgents** with best practices baked in — in seconds.
 
@@ -23,7 +26,7 @@ This tool solves that by generating a **production-grade agent scaffold** with:
 - 🧠 Context-aware logging
 - 📡 Progress / status message support
 - 🩺 Built-in health & quota protocol
-- 🤖 Automatic Agentverse compatibility
+- 🤖 AAgentverse-compatible Agents
 - 🧱 Clean, extensible project structure
 - 🛠 Sensible defaults that don’t fight you later
 
@@ -46,11 +49,13 @@ If you build agents more than once — this saves you time.
 
 ## 📦 Installation
 
+> 📦 PyPI: [https://pypi.org/project/create-agentverse-agent/](https://pypi.org/project/create-agentverse-agent/)
+
 ### ⭐ Recommended: `uvx` (no install, like `npx`)
 
 ```bash
 uvx create-agentverse-agent
-````
+```
 
 That’s it. No environment pollution, no setup.
 
@@ -91,7 +96,7 @@ Launch the interactive wizard to configure your agent step by step:
 
 ```bash
 uvx create-agentverse-agent
-````
+```
 
 ---
 
@@ -149,7 +154,7 @@ uvx create-agentverse-agent --debug
 Log file format:
 
 ```
-uvx create-agentverse-agent-<version>-cli-execution-<uuid>.log
+create-agentverse-agent-<version>-cli-execution-<uuid>.log
 ```
 
 Useful for troubleshooting or reporting issues.
@@ -231,3 +236,7 @@ Please read:
 - [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) to understand community expectations
 - [CHANGELOG.md](CHANGELOG.md) to see recent changes
+
+---
+
+Made with ❤️ by [Tejus Gupta](https://tejusgupta.dev).

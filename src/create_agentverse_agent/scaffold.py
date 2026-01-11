@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import ClassVar
 
 from .context import AgentContext
 from .templates import BaseTemplateRenderer
@@ -16,18 +15,6 @@ class ScaffoldError(Exception):
 
 class Scaffolder:
     """Handles filesystem operations for project creation."""
-
-    # Map template files to output files
-    TEMPLATE_MAP: ClassVar[dict[str, str]] = {
-        "template.agent.py.j2": "agent.py",
-        "template.main.py.j2": "main.py",
-        "template.Dockerfile.j2": "Dockerfile",
-        "template.docker-compose.yml.j2": "docker-compose.yml",
-        "template.pyproject.toml.j2": "pyproject.toml",
-        "template.requirements.txt.j2": "requirements.txt",
-        "template.env.j2": ".env",
-        "template.README.md.j2": "README.md",
-    }
 
     def __init__(self, renderer: BaseTemplateRenderer) -> None:
         self.renderer = renderer
@@ -59,14 +46,16 @@ class Scaffolder:
 
         # Write each file
         context_dict = context.model_dump()
-        for template_name, output_name in self.TEMPLATE_MAP.items():
+        rendered_files = 0
+        for template_name in self.renderer.list_templates():
+            logger.debug("Processing template: %s", template_name)
+            output_name = template_name.replace("template.", "").replace(".j2", "")
             logger.debug("Rendering template: %s -> %s", template_name, output_name)
             content = self.renderer.render(template_name, context_dict)
             output_path = project_path / output_name
             output_path.write_text(content)
             logger.debug("Wrote file: %s", output_path)
+            rendered_files += 1
 
-        logger.info(
-            "Successfully created project with %d files", len(self.TEMPLATE_MAP)
-        )
+        logger.info("Successfully created project with %d files", rendered_files)
         return project_path

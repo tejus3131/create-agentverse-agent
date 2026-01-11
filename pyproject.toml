@@ -109,9 +109,19 @@ module = ["tests.*"]
 ignore_errors = true
 
 [tool.coverage.run]
-source = ["create_agentverse_agent"]
 branch = true
+source = ["create_agentverse_agent"]
+omit = [
+  "*/tests/*",
+  "*/templates/*",
+  "*.j2",
+]
 
 [tool.coverage.report]
 show_missing = true
-skip_covered = true
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "if __name__ == .__main__.:",
+  "raise NotImplementedError",
+]

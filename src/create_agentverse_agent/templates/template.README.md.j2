@@ -5,3 +5,14 @@ This is the README for the **{{ display_name }}** agent created using the Create
 ## Description
 
 {{ agent_description }}
+{% if not agentverse_api_key %}
+
+## Environment Variables
+- Add your `AGENT_VERSE_API` key in the `.env` file for better support.
+{% endif %}
+
+## Setup
+- Use `make install` to install dependencies.
+
+## Running the Agent
+- Use `make run` to start the agent.

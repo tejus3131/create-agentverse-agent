@@ -24,4 +24,4 @@ async def chat(
         send_progress(f"Processing... {((i + 1) / PROGRESS_COUNT) * 100:.0f}% complete")
         logger.info(f"[{session_id}] Processing... {((i + 1) / PROGRESS_COUNT) * 100:.0f}% complete")
 
-    return f"Hello, {user_id}! I am {{agent_name}}"
+    return f"Hello, {user_id}! I am {{display_name}}."

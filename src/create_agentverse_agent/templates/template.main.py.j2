@@ -46,7 +46,7 @@ DEBUG_ACTIVE = ENV != "production"
 LOG_LEVEL = DEBUG if DEBUG_ACTIVE else INFO
 README_PATH = Path(__file__).parent / "README.md"
 
-AGENT_NAME = os.getenv("AGENT_NAME", "{{agent_name}}")
+AGENT_NAME = os.getenv("AGENT_NAME", "{{display_name}}")
 AGENT_HANDLE = os.getenv("AGENT_HANDLE", "{{safe_name}}")
 AGENT_DESCRIPTION = "{{agent_description}}"
 AGENT_README = README_PATH.read_text() if README_PATH.exists() else "No README available."
@@ -62,15 +62,13 @@ AGENT_ROUTE = os.getenv(
 AGENTVERSE_API_KEY = os.getenv("AGENTVERSE_API_KEY")
 
 # Message processing configuration
-MAX_PROCESSED_MESSAGES = 100
-PROCESSED_MESSAGE_TTL_MINUTES = 60
-CLEANUP_INTERVAL_SECONDS = 300
+MAX_PROCESSED_MESSAGES = int(os.getenv("MAX_PROCESSED_MESSAGES", "{{max_processed_messages}}"))
+PROCESSED_MESSAGE_TTL_MINUTES = int(os.getenv("PROCESSED_MESSAGE_TTL_MINUTES", "{{processed_message_ttl_minutes}}"))
+CLEANUP_INTERVAL_SECONDS = int(os.getenv("CLEANUP_INTERVAL_SECONDS", "{{cleanup_interval_seconds}}"))
 
-# =============================================================================
-# Validate critical configurations
-# =============================================================================
-assert AGENTVERSE_API_KEY, "AGENTVERSE_API_KEY is required to register with Agentverse."
-assert AGENT_SEED_PHRASE, "AGENT_SEED_PHRASE is required to register with Agentverse."
+# Rate limiting configuration
+RATE_LIMIT_MAX_REQUESTS = int(os.getenv("RATE_LIMIT_MAX_REQUESTS", "{{rate_limit_max_requests}}"))
+RATE_LIMIT_WINDOW_MINUTES = int(os.getenv("RATE_LIMIT_WINDOW_MINUTES", "{{rate_limit_window_minutes}}"))
 
 
 # =============================================================================
@@ -520,7 +518,10 @@ proto = QuotaProtocol(
     storage_reference=agent.storage,
     name="RateLimitProtocol",
     version="0.1.0",
-    default_rate_limit=RateLimit(window_size_minutes=60, max_requests=30),
+    default_rate_limit=RateLimit(
+        window_size_minutes=RATE_LIMIT_WINDOW_MINUTES,
+        max_requests=RATE_LIMIT_MAX_REQUESTS
+    ),
 )
 
 # Health monitoring protocol

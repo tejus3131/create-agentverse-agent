@@ -1,0 +1,53 @@
+.PHONY: help install build up logs down clean run env
+
+# Default target
+help:
+	@echo "Available commands:"
+	@echo "  make install    - Install dependencies with Poetry"
+	@echo "  make build      - Export requirements.txt from Poetry"
+	@echo "  make up         - Start Docker Compose in detached mode"
+	@echo "  make logs       - Tail Docker Compose logs"
+	@echo "  make down       - Stop Docker Compose"
+	@echo "  make clean      - Removes docker containers and images"
+	@echo "  make run        - Export requirements and start Docker Compose"
+	@echo "  make env        - Activate Poetry virtual environment"
+
+# Install dependencies with Poetry
+install:
+	@echo "📦 Installing dependencies with Poetry..."
+	poetry sync
+
+# Export requirements.txt from Poetry
+build:
+	@echo "📄 Exporting requirements.txt from Poetry..."
+	poetry run pip freeze > requirements.txt
+
+# Start Docker Compose in detached mode
+up:
+	@echo "🐳 Starting Docker Compose in detached mode..."
+	docker compose up --build -d
+
+# Tail Docker Compose logs
+logs:
+	@echo "📜 Tailing Docker Compose logs..."
+	docker compose logs -f
+
+# Stop Docker Compose
+down:
+	@echo "🛑 Stopping Docker Compose..."
+	docker compose down
+
+# Removes docker containers and images
+clean:
+	@echo "🧹 Cleaning up Docker containers and images..."
+	docker compose down --rmi all --volumes --remove-orphans
+
+# Run the application with Docker Compose
+run: install build up
+	@echo "🚀 Application is running!"
+	@trap '$(MAKE) --no-print-directory down; exit 0' INT; docker compose logs -f
+
+# Activate virtual environment
+env:
+	@echo "🐍 Activating Poetry virtual environment..."
+	poetry env activate
