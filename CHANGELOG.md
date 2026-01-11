@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 
 ---
 
+# [0.2.3]
+
+- New make command to run agent in poetry environment
+- Updated Dockerfile Template to include README.md in container
+- Updated README Template for usage instruction
+- Updated CLI instruction at project generation
+
+---
+
 ## [0.2.2]
 
 - Added initial docs
