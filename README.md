@@ -5,12 +5,12 @@
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/create-agentverse-agent?cacheSeconds=300)](https://pypi.org/project/create-agentverse-agent/)
 [![License](https://img.shields.io/github/license/tejus3131/create-agentverse-agent)](LICENSE)
 [![CI](https://github.com/tejus3131/create-agentverse-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/tejus3131/create-agentverse-agent/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/docs-github--pages-blue)](https://tejus3131.github.io/create-agentverse-agent/)
+[![Docs](https://img.shields.io/badge/docs-github--pages-blue)](https://create-agentverse-agent.tech/)
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://black.readthedocs.io/)
 [![Ruff](https://img.shields.io/badge/lint-ruff-red)](https://docs.astral.sh/ruff/)
 [![Mypy](https://img.shields.io/badge/type%20check-mypy-blue)](https://mypy.readthedocs.io/)
 
-> 📖 **Full Documentation:** [tejus3131.github.io/create-agentverse-agent](https://tejus3131.github.io/create-agentverse-agent/)
+> 📖 **Full Documentation:** [create-agentverse-agent.tech](https://create-agentverse-agent.tech/)
 
 A CLI tool to scaffold **production-ready uAgents** with best practices baked in — in seconds.
 
@@ -26,7 +26,7 @@ This tool solves that by generating a **production-grade agent scaffold** with:
 - 🧠 Context-aware logging
 - 📡 Progress / status message support
 - 🩺 Built-in health & quota protocol
-- 🤖 AAgentverse-compatible Agents
+- 🤖 Agentverse-compatible Agents
 - 🧱 Clean, extensible project structure
 - 🛠 Sensible defaults that don’t fight you later
 
@@ -202,14 +202,14 @@ You can ship this, not just demo it.
 
 ## 📚 Documentation
 
-Full documentation is available at **[tejus3131.github.io/create-agentverse-agent](https://tejus3131.github.io/create-agentverse-agent/)**
+Full documentation is available at **[create-agentverse-agent.tech](https://create-agentverse-agent.tech/)**
 
 | Guide | Description |
 |-------|-------------|
-| [Installation](https://tejus3131.github.io/create-agentverse-agent/installation) | Multiple installation methods |
-| [Usage](https://tejus3131.github.io/create-agentverse-agent/usage) | CLI options and examples |
-| [Generated Structure](https://tejus3131.github.io/create-agentverse-agent/structure) | What gets created |
-| [Configuration](https://tejus3131.github.io/create-agentverse-agent/configuration) | Customization options |
+| [Installation](https://create-agentverse-agent.tech/installation) | Multiple installation methods |
+| [Usage](https://create-agentverse-agent.tech/usage) | CLI options and examples |
+| [Generated Structure](https://create-agentverse-agent.tech/structure) | What gets created |
+| [Configuration](https://create-agentverse-agent.tech/configuration) | Customization options |
 
 ---
 
