@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 
 ---
 
+# [0.2.4]
+
+- New test template for tesing without agentverse
+- New make command for starting streamlit server
+- Added streamlit to dev dependencies
+- Updated Docker template for better package installation
+
+---
+
 # [0.2.3]
 
 - New make command to run agent in poetry environment
