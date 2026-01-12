@@ -246,7 +246,11 @@ class AgentContext(BaseModel):
     @property
     def display_name(self) -> str:
         """Formatted display name for the agent."""
-        return self.agent_name or "Agent " + self.agent_seed_phrase[:8]
+        return (
+            self.agent_name.title()
+            if self.agent_name
+            else "Agent " + self.agent_seed_phrase[:8]
+        )
 
     @property
     def safe_name(self) -> str:

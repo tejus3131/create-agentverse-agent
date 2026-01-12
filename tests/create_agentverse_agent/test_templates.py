@@ -95,6 +95,7 @@ class TestListTemplates:
             "template.Makefile.j2",
             "template.pyproject.toml.j2",
             "template.README.md.j2",
+            "template.test.py.j2",
         }
 
         assert expected.issubset(set(templates))

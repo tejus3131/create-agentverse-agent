@@ -15,7 +15,7 @@ help:
 # Install dependencies with Poetry
 install:
 	@echo "📦 Installing dependencies with Poetry..."
-	poetry sync
+	poetry sync --with dev
 
 # Export requirements.txt from Poetry
 build:
@@ -56,3 +56,8 @@ env:
 dev: install
 	@echo "🚀 Running application inside Poetry environment..."
 	poetry run python main.py
+
+# Run test streamlit app
+test: install
+	@echo "🚀 Running test Streamlit app..."
+	poetry run streamlit run test.py
