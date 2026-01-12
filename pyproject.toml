@@ -1,6 +1,6 @@
 [project]
 name = "create-agentverse-agent"
-version = "0.2.4"
+version = "0.2.5"
 description = "A tool to create Agentverse compatible agents based on uAgents framework."
 readme = "README.md"
 authors = [
