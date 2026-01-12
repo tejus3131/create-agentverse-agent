@@ -4,12 +4,17 @@ All notable changes to this project are documented here.
 
 ---
 
+# [0.2.5]
+
+- Updated Docker template for better package installation
+
+---
+
 # [0.2.4]
 
+- Added streamlit to dev dependencies
 - New test template for tesing without agentverse
 - New make command for starting streamlit server
-- Added streamlit to dev dependencies
-- Updated Docker template for better package installation
 
 ---
 
