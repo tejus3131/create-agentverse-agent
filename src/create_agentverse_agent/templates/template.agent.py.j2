@@ -1,8 +1,30 @@
+"""
+This module defines the asynchronous chat function for Agent 8a64ce3f.
+
+The `chat` function simulates a chat interaction, providing progress updates
+via a callback and logging each step. It is intended as a template for
+implementing actual chat or AI logic. The function receives session and user
+identifiers, the user's message, a logger for recording events, and a
+send_progress callback for reporting progress to the caller.
+
+```python
+chat(
+    session_id: str,
+    user_id: str,
+    message: str,
+    logger: Logger,
+    send_progress: Callable[[str], None]
+) -> str:
+    # Add your chat logic here
+```
+"""
 
 import asyncio
 from logging import Logger
 from typing import Callable
 
+
+# Do not remove this function, you need to implement your chat logic here
 async def chat(
     session_id: str,
     user_id: str,
@@ -20,8 +42,14 @@ async def chat(
     PROGRESS_COUNT = 3
 
     for i in range(PROGRESS_COUNT):
-        await asyncio.sleep(5) # Simulate processing time
+        await asyncio.sleep(1) # Simulate processing time
         send_progress(f"Processing... {((i + 1) / PROGRESS_COUNT) * 100:.0f}% complete")
         logger.info(f"[{session_id}] Processing... {((i + 1) / PROGRESS_COUNT) * 100:.0f}% complete")
 
-    return f"Hello, {user_id}! I am {{display_name}}."
+    response = (
+        f"Hello, `{user_id}`!\n\nI am `{{ display_name }}`.\n\nYour message was: `{message}`.\n\nSession ID: `{session_id}`\n\n\n"
+        "> This is a simulated response after processing your message.\n"
+        "> Update the `chat` function in `agent.py` with your actual logic."
+    )
+
+    return response
