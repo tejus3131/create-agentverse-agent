@@ -1,39 +1,79 @@
+"""
+A Streamlit-based chat interface that supports asynchronous message processing with progress updates.
+
+Features:
+- User authentication via name input.
+- Unique session and user IDs for each chat session.
+- Displays chat history between user and assistant.
+- Shows real-time progress logs for assistant responses.
+- Supports resetting the chat session.
+- Uses an async `chat` function (mocked if not available) to simulate or process messages.
+- Logs all interactions and progress updates.
+
+Modules:
+- streamlit: For UI and session state management.
+- asyncio: For asynchronous message processing.
+- uuid: For generating unique session IDs.
+- datetime: For timestamping progress logs.
+- typing: For type annotations.
+- logging: For logging events and progress.
+
+To use with your own agent, implement the `chat` function in `agent.py` with the specified signature.
+"""
+
 import streamlit as st
 import asyncio
 import uuid
 from datetime import datetime
 from typing import Callable
 import logging
-import time
+try:
+    from agent import chat
+except ImportError:
+    # Mock chat function for testing purposes
+    async def chat(
+        session_id: str,
+        user_id: str,
+        message: str,
+        logger: logging.Logger,
+        send_progress: Callable[[str], None]
+    ) -> str:
+        """
+        Example chat function with progress updates.
+        Replace this with your actual chat/AI logic.
+        """
+        logger.info(f"[{session_id}] Received message from user {user_id}: {message}")
+        send_progress("Starting processing... 0% complete")
+
+        PROGRESS_COUNT = 3
+
+        for i in range(PROGRESS_COUNT):
+            await asyncio.sleep(1) # Simulate processing time
+            send_progress(f"Processing... {((i + 1) / PROGRESS_COUNT) * 100:.0f}% complete")
+            logger.info(f"[{session_id}] Processing... {((i + 1) / PROGRESS_COUNT) * 100:.0f}% complete")
+
+        response = (
+            f"Hello, `{user_id}`!\n\nI am `{{ display_name }}`.\n\nYour message was: `{message}`.\n\nSession ID: `{session_id}`\n\n\n"
+            "> This is a simulated response after processing your message.\n"
+            "> Add `chat` method in `agent.py` with your actual logic.\n\n"
+            "Follow following format:\n\n\n"
+            "```python\n"
+            "async def chat(\n"
+            "\tsession_id: str,\n"
+            "\tuser_id: str,\n"
+            "\tmessage: str,\n"
+            "\tlogger: Logger,\n"
+            "\tsend_progress: Callable[[str], None]\n"
+            ") -> str\n"
+            "\t# Add your chat logic here\n"
+            "```\n"
+        )
+
+        return response
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Mock chat function (replace with your actual implementation)
-async def chat(
-    session_id: str,
-    user_id: str,
-    message: str,
-    logger: logging.Logger,
-    send_progress: Callable[[str], None]
-) -> str:
-    """
-    Example chat function with progress updates.
-    Replace this with your actual chat/AI logic.
-    """
-    logger.info(f"[{session_id}] Received message from user {user_id}: {message}")
-    send_progress("Starting processing... 0% complete")
-
-    PROGRESS_COUNT = 2
-    SLEEP_INTERVAL = 2  # seconds
-
-    for i in range(PROGRESS_COUNT):
-        await asyncio.sleep(SLEEP_INTERVAL)  # Simulate processing time
-        send_progress(f"Processing... {((i + 1) / PROGRESS_COUNT) * 100:.0f}% complete")
-        logger.info(f"[{session_id}] Processing... {((i + 1) / PROGRESS_COUNT) * 100:.0f}% complete")
-
-    return f"Hello, {user_id}! I am Agent ee7be4ef. You said: '{message}'"
 
 # Initialize session state
 if "session_id" not in st.session_state:
@@ -134,7 +174,7 @@ if prompt := st.chat_input("Type your message..."):
                 response = await chat(
                     st.session_state.session_id,
                     st.session_state.user_id,
-                    prompt,
+                    prompt or "",
                     logger,
                     send_progress
                 )

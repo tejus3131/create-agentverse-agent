@@ -1,6 +1,6 @@
 [project]
 name = "create-agentverse-agent"
-version = "0.2.5"
+version = "0.2.6"
 description = "A tool to create Agentverse compatible agents based on uAgents framework."
 readme = "README.md"
 authors = [
@@ -22,6 +22,8 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: Implementation :: CPython",
   "Topic :: Software Development :: Code Generators",
   "Topic :: Software Development :: Libraries",

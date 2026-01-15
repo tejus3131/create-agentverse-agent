@@ -1,3 +1,29 @@
+"""
+Main entry point for Agent 8a64ce3f: An ASI1-compatible chat agent built using 'create-agentverse-agent'.
+
+This module sets up an asynchronous agent with the following features:
+- Handles chat messages using the uAgents framework and ASI1 chat protocol.
+- Supports progress updates and final responses for each message, ensuring message ordering.
+- Deduplicates and tracks processed messages with configurable limits and TTL.
+- Provides health check and rate limiting protocols.
+- Registers with Agentverse if credentials are provided.
+- Periodically cleans up expired and completed message tasks.
+- Allows for easy extension by implementing a custom `chat` function in `agent.py`.
+
+Key Components:
+- MessageManager: Manages message processing, deduplication, progress updates, and cleanup.
+- Agent setup: Configures agent identity, logging, protocols, and event handlers.
+- Protocols: Includes chat, health, and rate limiting protocols.
+- Event Handlers: Startup, shutdown, message handling, and periodic cleanup.
+
+Environment Variables:
+- ENV, AGENT_NAME, AGENT_HANDLE, AGENT_PORT, AGENT_SEED_PHRASE, AGENTVERSE_API_KEY, etc.
+
+Usage:
+- Run this module as the main entry point to start the agent.
+- Customize chat logic by providing a `chat` function in `agent.py`.
+"""
+
 from __future__ import annotations
 import asyncio
 from datetime import datetime, timezone
@@ -30,8 +56,49 @@ from uagents_core.utils.registration import (
 from pydantic import BaseModel, Field, ConfigDict
 import os
 
-# import the chat function
-from agent import chat
+try:
+    from agent import chat
+except ImportError:
+    # Mock chat function for testing purposes
+    async def chat(
+        session_id: str,
+        user_id: str,
+        message: str,
+        logger: logging.Logger,
+        send_progress: Callable[[str], None]
+    ) -> str:
+        """
+        Example chat function with progress updates.
+        Replace this with your actual chat/AI logic.
+        """
+        logger.info(f"[{session_id}] Received message from user {user_id}: {message}")
+        send_progress("Starting processing... 0% complete")
+
+        PROGRESS_COUNT = 3
+
+        for i in range(PROGRESS_COUNT):
+            await asyncio.sleep(1) # Simulate processing time
+            send_progress(f"Processing... {((i + 1) / PROGRESS_COUNT) * 100:.0f}% complete")
+            logger.info(f"[{session_id}] Processing... {((i + 1) / PROGRESS_COUNT) * 100:.0f}% complete")
+
+        response = (
+            f"Hello, `{user_id}`!\n\nI am `{{ display_name }}`.\n\nYour message was: `{message}`.\n\nSession ID: `{session_id}`\n\n\n"
+            "> This is a simulated response after processing your message.\n"
+            "> Add `chat` method in `agent.py` with your actual logic.\n\n"
+            "Follow following format:\n\n\n"
+            "```python\n"
+            "async def chat(\n"
+            "\tsession_id: str,\n"
+            "\tuser_id: str,\n"
+            "\tmessage: str,\n"
+            "\tlogger: Logger,\n"
+            "\tsend_progress: Callable[[str], None]\n"
+            ") -> str\n"
+            "\t# Add your chat logic here\n"
+            "```\n"
+        )
+
+        return response
 
 # Load environment variables
 load_dotenv()

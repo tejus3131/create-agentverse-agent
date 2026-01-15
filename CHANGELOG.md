@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ---
 
+# [0.2.6]
+
+- Updated README to include test command.
+- Added fallback chat method in test.py and main.py
+- Updated message structure in agent.py
+
+---
+
 # [0.2.5]
 
 - Updated Docker template for better package installation
