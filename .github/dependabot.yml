@@ -2,9 +2,7 @@ version: 2
 
 updates:
   # 🔒 SECURITY UPDATES (automatic, grouped)
-  # Note: This project uses pyproject.toml with uv. Dependabot's pip ecosystem
-  # should be able to detect dependencies from pyproject.toml, but verify it works.
-  - package-ecosystem: "pip"
+  - package-ecosystem: "pip"  # Dependabot supports pyproject.toml
     directory: "/"
     schedule:
       interval: "daily"
@@ -19,16 +17,3 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
-
-  # 📦 VERSION UPDATES (disabled: project uses pyproject.toml with uv, not pip/requirements.txt)
-  # - package-ecosystem: "pip"
-  #   directory: "/"
-  #   schedule:
-  #     interval: "monthly"
-  #   open-pull-requests-limit: 3
-  #   labels:
-  #     - "dependencies"
-  #   ignore:
-  #     # Ignore major version bumps (you handle these manually)
-  #     - dependency-name: "*"
-  #       update-types: ["version-update:semver-major"]
