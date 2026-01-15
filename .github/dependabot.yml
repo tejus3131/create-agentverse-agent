@@ -1,0 +1,32 @@
+version: 2
+
+updates:
+  # 🔒 SECURITY UPDATES (automatic, grouped)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "security"
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # 📦 VERSION UPDATES (manual control, optional, low frequency)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+    ignore:
+      # Ignore major version bumps (you handle these manually)
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
