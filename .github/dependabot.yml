@@ -1,8 +1,6 @@
 version: 2
-
 updates:
-  # 🔒 SECURITY UPDATES (automatic, grouped)
-  - package-ecosystem: "pip"  # Dependabot supports pyproject.toml
+  - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "daily"
