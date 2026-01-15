@@ -1,5 +1,4 @@
 name: Release to PyPI
-
 on:
   push:
     tags:
@@ -13,7 +12,6 @@ jobs:
   quality-check:
     name: Quality & Tests
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,8 +27,17 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
 
-      - name: Run checks
-        run: make check
+      - name: Run ruff lint
+        run: uv run ruff check .
+
+      - name: Run black format check
+        run: uv run black . --check
+
+      - name: Run ty type check
+        run: uv run ty check
+
+      - name: Run tests
+        run: uv run pytest -v
 
   build-and-publish:
     name: Build & Publish to PyPI
@@ -39,7 +46,6 @@ jobs:
     environment:
       name: pypi
       url: https://pypi.org/p/create-agentverse-agent
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
