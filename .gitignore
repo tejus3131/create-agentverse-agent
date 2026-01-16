@@ -53,3 +53,14 @@ Thumbs.db
 # Environment / secrets
 .env
 .env.*
+
+# Jekyll build output
+docs/_site/
+
+# Bundler
+docs/.bundle/
+docs/Gemfile.lock
+
+# Ruby
+*.gem
+*.rbc

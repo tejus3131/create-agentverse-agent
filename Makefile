@@ -2,24 +2,28 @@
 # Configuration
 # =============================================================================
 
-UV              := uv
-UV_RUN          := uv run
-PACKAGE_NAME    := create-agentverse-agent
+UV           := uv
+UV_RUN       := uv run
+PACKAGE_NAME := create-agentverse-agent
 
-PYTEST_ARGS     := tests/ -v --cov=. --cov-report=term-missing
-RUFF_ARGS       := .
-BLACK_ARGS      := .
-TY_ARGS         := .
+PYTEST_ARGS  := tests/ -v --cov=. --cov-report=term-missing
+RUFF_ARGS    := .
+BLACK_ARGS   := .
+TY_ARGS      := .
+
+DOCS_DIR     := docs
 
 # =============================================================================
 # Phony targets
 # =============================================================================
 
 .PHONY: help \
-        install install-dev reinstall \
-        lint lint-fix format typecheck test check \
-        clean clean-caches clean-build \
-        pre-commit pre-commit-install
+	install install-dev reinstall \
+	lint lint-fix format typecheck test check \
+	clean clean-caches clean-build \
+	pre-commit pre-commit-install \
+	build watch-typecheck dev \
+	docs-install docs-dev docs-clean docs-reinstall docs-check
 
 # =============================================================================
 # Help
@@ -44,10 +48,20 @@ help:
 	@echo "  check              Run full quality pipeline (lint-fix + format + typecheck + test)"
 	@echo "  pre-commit         Run pre-commit on all files"
 	@echo ""
+	@echo "Build:"
+	@echo "  build              Build package (runs check first)"
+	@echo ""
 	@echo "Maintenance:"
 	@echo "  clean              Remove all caches and build artifacts"
 	@echo "  clean-caches       Remove only cache directories"
 	@echo "  clean-build        Remove only build artifacts"
+	@echo ""
+	@echo "Docs:"
+	@echo "  docs-install       Install docs dependencies"
+	@echo "  docs-dev           Start docs dev server"
+	@echo "  docs-check         Build docs (no server)"
+	@echo "  docs-clean         Clean docs build artifacts"
+	@echo "  docs-reinstall     Clean and reinstall docs environment"
 	@echo ""
 
 # =============================================================================
@@ -141,3 +155,29 @@ dev: install-dev pre-commit-install
 	@echo ""
 	@echo "Run 'make check' to verify your setup"
 	@echo ""
+
+# =============================================================================
+# Docs (Jekyll / GitHub Pages)
+# =============================================================================
+
+docs-install:
+	@echo "📚 Installing docs dependencies..."
+	@cd $(DOCS_DIR) && bundle install
+
+docs-dev:
+	@echo "🚀 Starting docs dev server..."
+	@echo "➡️  http://localhost:4000"
+	@cd $(DOCS_DIR) && bundle exec jekyll serve
+
+docs-check:
+	@echo "🔍 Building docs (no server)..."
+	@cd $(DOCS_DIR) && bundle exec jekyll build
+
+docs-clean:
+	@echo "🧹 Cleaning docs build artifacts..."
+	@rm -rf $(DOCS_DIR)/_site
+	@rm -rf $(DOCS_DIR)/.bundle
+	@rm -f $(DOCS_DIR)/Gemfile.lock
+
+docs-reinstall: docs-clean docs-install
+	@echo "🔄 Docs environment reinstalled."

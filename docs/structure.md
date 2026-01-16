@@ -49,7 +49,7 @@ The application entrypoint that:
 
 Environment variables for configuration:
 
-```env
+```bash
 # Environment Configuration
 ENV=
 

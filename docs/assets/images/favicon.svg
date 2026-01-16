@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#1e1e2e"/>
+  <text
+    x="50%"
+    y="55%"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    font-family="JetBrains Mono, SFMono-Regular, Menlo, monospace"
+    font-size="16"
+    fill="#cdd6f4"
+  >&gt;_</text>
+</svg>

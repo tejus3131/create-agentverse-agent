@@ -38,10 +38,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/tejus3131/create-agentverse-agent"
 Repository = "https://github.com/tejus3131/create-agentverse-agent"
 Issues = "https://github.com/tejus3131/create-agentverse-agent/issues"
-Documentation = "https://github.com/tejus3131/create-agentverse-agent#readme"
+Documentation = "https://create-agentverse-agent.tech/"
 Changelog = "https://github.com/tejus3131/create-agentverse-agent/releases"
 
 [project.scripts]

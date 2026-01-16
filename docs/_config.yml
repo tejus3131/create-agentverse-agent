@@ -1,16 +1,81 @@
-theme: jekyll-theme-minimal
+# ================================
+# Core site settings
+# ================================
+remote_theme: just-the-docs/just-the-docs
 
 title: create-agentverse-agent
 description: A CLI tool to scaffold production-ready uAgents with best practices baked in
+url: https://create-agentverse-agent.tech
+favicon_ico: "/assets/images/favicon.svg"
 
 repository: tejus3131/create-agentverse-agent
+
 author:
   name: Tejus Gupta
   url: https://tejusgupta.dev
   email: hello@tejusgupta.dev
 
+
+# ================================
+# Plugins (GitHub Pages safe)
+# ================================
+plugins:
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-default-layout
+  - jekyll-titles-from-headings
+
+
+# ================================
+# Markdown & syntax highlighting
+# ================================
 markdown: kramdown
 
+kramdown:
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: highlight
+    line_numbers: false
+    block_html: true
+
+
+# ================================
+# Just-the-Docs settings
+# ================================
+search_enabled: true
+
+search:
+  heading_level: 2
+  previews: 3
+  preview_words_before: 6
+  preview_words_after: 10
+  tokenizer_separator: /[\s/]+/
+
+
+# Navigation & UX
+heading_anchors: true
+back_to_top: true
+
+
+# ================================
+# Theme / Appearance
+# ================================
+color_scheme: light
+enable_copy_code_button: true
+
+
+# ================================
+# SEO
+# ================================
+seo:
+  type: SoftwareSourceCode
+  name: create-agentverse-agent
+
+
+# ================================
+# Excludes
+# ================================
 exclude:
   - .github/
   - src/
