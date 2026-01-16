@@ -38,6 +38,7 @@ dependencies = [
 ]
 
 [project.urls]
+Homepage = "https://create-agentverse-agent.tech/"
 Repository = "https://github.com/tejus3131/create-agentverse-agent"
 Issues = "https://github.com/tejus3131/create-agentverse-agent/issues"
 Documentation = "https://create-agentverse-agent.tech/"
