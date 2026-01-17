@@ -349,15 +349,20 @@ class TestCollectHostingInfo:
     def test_collects_info_when_not_skipped(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Test that advanced settings are collected when not skipped."""
+        """Test that hosting info is collected when not skipped."""
         config = AgentContext()
-        original_max = config.max_processed_messages
+        original_address = config.hosting_address
 
         def mock_header(*_: Any, **__: Any) -> None:
             pass
 
         def mock_hint(*_: Any, **__: Any) -> None:
             pass
+
+        def mock_prompt_with_style(
+            prompt: str, default: str | None = None, **__: Any
+        ) -> str:
+            return "custom-address"
 
         def mock_prompt_int(prompt: str, default: int) -> int:
             return 999
@@ -367,14 +372,17 @@ class TestCollectHostingInfo:
 
         monkeypatch.setattr(prompts, "header", mock_header)
         monkeypatch.setattr(prompts, "hint", mock_hint)
+        monkeypatch.setattr(prompts, "prompt_with_style", mock_prompt_with_style)
         monkeypatch.setattr(prompts, "prompt_int", mock_prompt_int)
         monkeypatch.setattr(prompts.console, "print", mock_print)
 
         prompts.collect_hosting_info(config, skip=False)
 
-        # All int values should be set to 999 by mock
-        assert config.max_processed_messages == 999
-        assert config.max_processed_messages != original_max
+        # Address should be set by mock
+        assert config.hosting_address == "custom-address"
+        assert config.hosting_address != original_address
+        # Port should be set to 999 by mock
+        assert config.hosting_port == 999
 
 
 class TestCollectAdvancedSettings:
@@ -419,9 +427,9 @@ class TestCollectAdvancedSettings:
         monkeypatch.setattr(prompts, "prompt_int", mock_prompt_int)
         monkeypatch.setattr(prompts.console, "print", mock_print)
 
-        prompts.collect_hosting_info(config, skip=False)
+        prompts.collect_advanced_info(config, skip=False)
 
-        # Should have prompted for multiple settings
+        # Should have prompted for multiple settings (5 int prompts in collect_advanced_info)
         assert len(prompt_int_calls) >= 4
 
 
@@ -646,6 +654,11 @@ class TestCollectConfiguration:
         ) -> None:
             pass
 
+        def mock_collect_advanced_info(
+            config: AgentContext, skip: bool = False
+        ) -> None:
+            pass
+
         def mock_display_summary(*_: Any, **__: Any) -> None:
             pass
 
@@ -670,6 +683,9 @@ class TestCollectConfiguration:
         monkeypatch.setattr(
             prompts, "collect_environment_and_keys", mock_collect_environment_and_keys
         )
+        monkeypatch.setattr(
+            prompts, "collect_advanced_info", mock_collect_advanced_info
+        )
         monkeypatch.setattr(prompts, "display_summary", mock_display_summary)
         monkeypatch.setattr(prompts, "divider", mock_divider)
         monkeypatch.setattr(prompts.Confirm, "ask", mock_confirm)
@@ -689,6 +705,7 @@ class TestCollectConfiguration:
         """Test that standard mode skips advanced configuration."""
         hosting_skip_calls: list[bool] = []
         env_skip_calls: list[bool] = []
+        advanced_skip_calls: list[bool] = []
 
         def mock_collect_agent_info(config: AgentContext, skip: bool = False) -> None:
             pass
@@ -700,6 +717,11 @@ class TestCollectConfiguration:
             config: AgentContext, skip: bool = False
         ) -> None:
             env_skip_calls.append(skip)
+
+        def mock_collect_advanced_info(
+            config: AgentContext, skip: bool = False
+        ) -> None:
+            advanced_skip_calls.append(skip)
 
         def mock_display_summary(*_: Any, **__: Any) -> None:
             pass
@@ -721,6 +743,9 @@ class TestCollectConfiguration:
         monkeypatch.setattr(
             prompts, "collect_environment_and_keys", mock_collect_environment_and_keys
         )
+        monkeypatch.setattr(
+            prompts, "collect_advanced_info", mock_collect_advanced_info
+        )
         monkeypatch.setattr(prompts, "display_summary", mock_display_summary)
         monkeypatch.setattr(prompts.Confirm, "ask", mock_confirm)
         monkeypatch.setattr(prompts.console, "clear", mock_clear)
@@ -729,10 +754,10 @@ class TestCollectConfiguration:
 
         prompts.collect_configuration(default=False, advanced=False)
 
-        # In standard mode, collect_hosting_info is called twice (both skipped)
-        # and collect_environment_and_keys once (skipped)
-        assert hosting_skip_calls == [True, True]
+        # In standard mode, all collectors are called once with skip=True
+        assert hosting_skip_calls == [True]
         assert env_skip_calls == [True]
+        assert advanced_skip_calls == [True]
 
 
 class TestUserAbortError:
