@@ -149,7 +149,7 @@ wheels = [
 
 [[package]]
 name = "create-agentverse-agent"
-version = "0.2.6"
+version = "0.2.7"
 source = { editable = "." }
 dependencies = [
     { name = "jinja2" },

@@ -138,6 +138,30 @@ def collect_agent_info(config: AgentContext, skip: bool = False) -> None:
 
 
 def collect_hosting_info(config: AgentContext, skip: bool = False) -> None:
+    """Collect hosting information."""
+    logger.info("Collecting hosting information" + (" (skipped)" if skip else ""))
+    if skip:
+        success("Using default hosting configuration")
+        return
+
+    header("Hosting Configuration", "🌐")
+
+    config.hosting_address = prompt_with_style(
+        "Hosting address",
+        default=config.hosting_address,
+    )
+    console.print()
+    logger.info(f"Hosting address set to: {config.hosting_address}")
+
+    config.hosting_port = prompt_int(
+        "Hosting port",
+        default=config.hosting_port,
+    )
+    console.print()
+    logger.info(f"Hosting port set to: {config.hosting_port}")
+
+
+def collect_advanced_info(config: AgentContext, skip: bool = False) -> None:
     """Collect advanced performance and rate limiting settings."""
     logger.info("Collecting advanced settings" + (" (skipped)" if skip else ""))
     if skip:
@@ -363,12 +387,12 @@ def collect_configuration(default: bool, advanced: bool) -> AgentContext:
             console=console,
         )
         logger.debug(f"Configure advanced settings: {configure_advanced}")
-        collect_hosting_info(config, skip=not configure_advanced)
+        collect_advanced_info(config, skip=not configure_advanced)
     else:
         logger.debug("Standard mode - skipping advanced options")
         collect_hosting_info(config, skip=True)
         collect_environment_and_keys(config, skip=True)
-        collect_hosting_info(config, skip=True)
+        collect_advanced_info(config, skip=True)
 
     # Display summary and confirm
     display_summary(config)
