@@ -4,9 +4,9 @@ All notable changes to this project are documented here.
 
 ---
 
-# [0.2.6]
+# [0.2.7]
 
-- Fixed hosting settings option in advance mode.
+- Fixed hosting settings option in advanced mode.
 
 ---
 
