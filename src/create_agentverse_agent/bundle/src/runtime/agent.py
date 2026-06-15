@@ -18,7 +18,7 @@ from runtime.payments.service import PaymentService
 from runtime.pipeline import MessagePipeline
 from runtime.protocols.chat import setup_chat_protocol
 from runtime.protocols.payment import setup_payment_protocol
-from runtime.registration import register_agent_to_agentverse
+from runtime.registration import AGENTVERSE_README_PATH, register_agent_to_agentverse
 
 logger = logging.getLogger(__name__)
 
@@ -99,23 +99,24 @@ class AgentRunner:
         return self._agent
 
     def _build_agent(self) -> None:
-
         agent_cfg = self.settings.agent
         runtime_cfg = self.settings.runtime
-
-        self._agent = Agent(
-            name=agent_cfg.name,
-            port=agent_cfg.port,
-            seed=self.settings.secrets.AGENT_SEED,
-            handle=agent_cfg.handle,
-            description=agent_cfg.description,
-            log_level=_LOG_LEVELS[runtime_cfg.log_level],
-            network=runtime_cfg.network,
-            mailbox=runtime_cfg.mailbox,
-            handle_messages_concurrently=runtime_cfg.handle_messages_concurrently,
-        )
-        self._agent._avatar_url = agent_cfg.avatar_url or ""
-        self._agent._banner_url = agent_cfg.banner_url or ""
+        agent_kwargs: dict[str, object] = {
+            "name": agent_cfg.name,
+            "port": agent_cfg.port,
+            "seed": self.settings.secrets.AGENT_SEED,
+            "handle": agent_cfg.handle,
+            "description": agent_cfg.description,
+            "avatar_url": agent_cfg.avatar_url,
+            "banner_url": agent_cfg.banner_url,
+            "log_level": _LOG_LEVELS[runtime_cfg.log_level],
+            "network": runtime_cfg.network,
+            "mailbox": runtime_cfg.mailbox,
+            "handle_messages_concurrently": runtime_cfg.handle_messages_concurrently,
+        }
+        if AGENTVERSE_README_PATH.is_file():
+            agent_kwargs["readme_path"] = str(AGENTVERSE_README_PATH)
+        self._agent = Agent(**agent_kwargs)
         for log_namespace in ("runtime", "agent", "shared.db"):
             logging.getLogger(log_namespace).setLevel(
                 _LOG_LEVELS[runtime_cfg.log_level]
@@ -233,6 +234,7 @@ class AgentRunner:
                     agent=agent,
                     user_token=api_key,
                     handle=settings.agent.handle,
+                    settings=settings,
                 )
                 ctx.logger.info(
                     "Agentverse registration: action=%s success=%s detail=%s",
