@@ -1,16 +1,15 @@
 # src/create_agentverse_agent/templates.py
 import logging
-from importlib.resources import files
 
 from jinja2 import Environment, PackageLoader, select_autoescape
+
+from .bundle_paths import TEMPLATE_MANIFEST
 
 logger = logging.getLogger(__name__)
 
 
 class TemplateError(Exception):
     """Custom exception for template rendering errors."""
-
-    pass
 
 
 class BaseTemplateRenderer:
@@ -22,18 +21,17 @@ class BaseTemplateRenderer:
     def list_templates(self) -> list[str]:
         raise NotImplementedError
 
+    def template_manifest(self) -> list[tuple[str, str]]:
+        raise NotImplementedError
+
 
 class TemplateRenderer(BaseTemplateRenderer):
     """Handles template loading and rendering."""
 
     def __init__(self) -> None:
-        templates_path = files("create_agentverse_agent").joinpath("templates")
-        logger.debug("Initializing TemplateRenderer with path: %s", templates_path)
-
+        logger.debug("Initializing TemplateRenderer")
         self.env = Environment(
-            loader=PackageLoader(
-                "create_agentverse_agent.templates", str(templates_path)
-            ),
+            loader=PackageLoader("create_agentverse_agent", "templates"),
             autoescape=select_autoescape(),
             trim_blocks=True,
             lstrip_blocks=True,
@@ -41,15 +39,7 @@ class TemplateRenderer(BaseTemplateRenderer):
         logger.info("TemplateRenderer initialized successfully")
 
     def render(self, template_name: str, context: dict[str, object]) -> str:
-        """Render a single template with context.
-
-        Args:
-            template_name: e.g., "template.agent.py.j2"
-            context: Dictionary of variables
-
-        Returns:
-            Rendered string
-        """
+        """Render a single template with context."""
         logger.debug(
             "Rendering template: %s with context keys: %s",
             template_name,
@@ -69,3 +59,7 @@ class TemplateRenderer(BaseTemplateRenderer):
         templates: list[str] = self.env.list_templates()
         logger.debug("Found %d templates: %s", len(templates), templates)
         return templates
+
+    def template_manifest(self) -> list[tuple[str, str]]:
+        """Return template name to output path mapping."""
+        return list(TEMPLATE_MANIFEST)

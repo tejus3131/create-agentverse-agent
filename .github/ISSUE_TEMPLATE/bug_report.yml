@@ -37,11 +37,20 @@ body:
     validations:
       required: true
 
+  - type: checkboxes
+    id: bug_scope
+    attributes:
+      label: Bug scope
+      options:
+        - label: Scaffold CLI (create-agentverse-agent tool)
+        - label: Generated agent runtime (scaffolded project)
+
   - type: input
     id: python
     attributes:
       label: Python version
-      placeholder: "3.12.1"
+      description: CLI needs 3.12+; generated agents need 3.13
+      placeholder: "3.13.0"
     validations:
       required: true
 

@@ -1,7 +1,7 @@
 [project]
 name = "create-agentverse-agent"
-version = "0.2.7"
-description = "A tool to create Agentverse compatible agents based on uAgents framework."
+version = "1.0.0"
+description = "Scaffold production-ready uAgents projects with Postgres-backed multipod runtime."
 readme = "README.md"
 authors = [
     { name = "Tejus Gupta", email = "tejus3131@tejusgupta.dev" }
@@ -32,9 +32,10 @@ classifiers = [
 ]
 dependencies = [
     "jinja2>=3.1.6",
-    "pydantic>=2.12.5",
-    "rich>=14.2.0",
-    "typer>=0.21.1",
+    "pydantic>=2.13.4",
+    "pyyaml>=6.0.2",
+    "rich>=15.0.0",
+    "typer>=0.26.7",
 ]
 
 [project.urls]
@@ -53,12 +54,12 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "black>=25.12.0",
-    "pre-commit>=4.5.1",
-    "pytest>=9.0.2",
-    "pytest-cov>=7.0.0",
-    "ruff>=0.14.11",
-    "ty>=0.0.12",
+    "black>=26.5.1",
+    "pre-commit>=4.6.0",
+    "pytest>=9.1.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.17",
+    "ty>=0.0.49",
 ]
 
 [tool.ruff]
@@ -101,8 +102,13 @@ testpaths = ["tests"]
 python-version = "3.12"
 
 [tool.ty.src]
-include = ["src", "create_agentverse_agent"]
-exclude = ["tests", "*.j2", "*/templates/*"]
+include = ["src/create_agentverse_agent"]
+exclude = [
+  "tests",
+  "*.j2",
+  "**/templates/**",
+  "**/bundle/**",
+]
 
 [tool.ty.rules]
 # Errors - critical issues
@@ -133,6 +139,7 @@ source = ["create_agentverse_agent"]
 omit = [
   "*/tests/*",
   "*/templates/*",
+  "*/bundle/*",
   "*.j2",
 ]
 

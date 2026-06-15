@@ -4,7 +4,7 @@
 remote_theme: just-the-docs/just-the-docs
 
 title: create-agentverse-agent
-description: A CLI tool to scaffold production-ready uAgents with best practices baked in
+description: Scaffold Postgres-backed uAgents projects
 url: https://create-agentverse-agent.tech
 favicon_ico: "/assets/images/favicon.svg"
 

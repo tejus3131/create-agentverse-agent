@@ -1,4 +1,6 @@
 import logging
+import re
+from typing import Literal, cast
 
 import typer
 from rich.console import Console
@@ -6,16 +8,21 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.text import Text
 
-from .context import AgentContext
+from .context import (
+    ContextError,
+    PaymentMethodState,
+    ProjectContext,
+)
 
 logger = logging.getLogger(__name__)
 
 console = Console()
 
+_HANDLE_PATTERN = re.compile(r"^[a-z0-9-]+$")
+
 
 def header(text: str, emoji: str = "✨") -> None:
     """Display a stylish section header."""
-    logger.debug(f"Displaying header: {text}")
     console.print()
     console.print(f"[bold cyan]{emoji}  {text}[/bold cyan]")
     console.print(f"[dim blue]   {'─' * (len(text) + 2)}[/dim blue]")
@@ -29,7 +36,6 @@ def success(text: str) -> None:
 
 def hint(text: str) -> None:
     """Display a helpful hint."""
-    logger.debug(f"Hint: {text}")
     console.print(f"[dim yellow]   💡 {text}[/dim yellow]")
 
 
@@ -39,9 +45,7 @@ def prompt_with_style(
     password: bool = False,
 ) -> str:
     """Styled prompt wrapper."""
-    logger.debug(f"Prompting user: {prompt_text}")
     formatted_prompt = f"   [bold white]{prompt_text}[/bold white]"
-
     if default is not None:
         result = Prompt.ask(
             formatted_prompt,
@@ -56,34 +60,27 @@ def prompt_with_style(
             console=console,
         )
         result = result if result else ""
-
-    if not password:
-        logger.debug(f"User input for '{prompt_text}': {result}")
-    else:
-        logger.debug(f"User input for '{prompt_text}': [REDACTED]")
     return result
 
 
-def prompt_int(prompt_text: str, default: int) -> int:
-    """Prompt for integer input."""
-    logger.debug(f"Prompting for integer: {prompt_text} (default: {default})")
+def prompt_int(prompt_text: str, default: int, *, minimum: int | None = None) -> int:
+    """Prompt for integer input with optional minimum."""
     while True:
         response = prompt_with_style(prompt_text, default=str(default))
         try:
             value = int(response)
-            logger.debug(f"Integer input accepted: {value}")
+            if minimum is not None and value < minimum:
+                console.print(f"[red]   Value must be >= {minimum}[/red]")
+                continue
             return value
         except ValueError:
-            logger.warning(f"Invalid integer input: {response}")
             console.print("[red]   Please enter a valid number[/red]")
 
 
 def prompt_choice(prompt_text: str, choices: list[str], default: str) -> str:
     """Prompt for choice input."""
-    logger.debug(f"Prompting for choice: {prompt_text} (choices: {choices})")
     formatted_choices = " / ".join(f"[cyan]{c}[/cyan]" for c in choices)
     full_prompt = f"   [bold white]{prompt_text}[/bold white] ({formatted_choices})"
-
     while True:
         response = Prompt.ask(
             full_prompt,
@@ -91,225 +88,234 @@ def prompt_choice(prompt_text: str, choices: list[str], default: str) -> str:
             console=console,
         ).lower()
         if response in [c.lower() for c in choices]:
-            logger.debug(f"Choice selected: {response}")
             return response
-        logger.warning(f"Invalid choice: {response}")
         console.print(f"[red]   Please choose one of: {', '.join(choices)}[/red]")
 
 
-def collect_agent_info(config: AgentContext, skip: bool = False) -> None:
-    """Collect basic agent information."""
-    logger.info("Collecting agent information" + (" (skipped)" if skip else ""))
+def prompt_handle(prompt_text: str, default: str) -> str:
+    """Prompt for agent handle slug."""
+    while True:
+        value = prompt_with_style(prompt_text, default=default).lower().strip()
+        if _HANDLE_PATTERN.match(value):
+            return value
+        console.print(
+            "[red]   Handle must be lowercase letters, numbers, and dashes[/red]"
+        )
+
+
+def collect_identity(config: ProjectContext, skip: bool = False) -> None:
+    """Collect agent identity."""
     if skip:
-        success("Using default agent configuration")
+        success("Using default agent identity")
         return
 
     header("Agent Identity", "🤖")
+    agent = config.yml.agent
+    agent.name = prompt_with_style("Agent name", default=agent.name)
+    agent.handle = prompt_handle("Agent handle (URL slug)", default=agent.handle)
+    config.project_name = agent.handle
+    agent.description = prompt_with_style("Description", default=agent.description)
+    agent.port = prompt_int("Agent port", default=agent.port, minimum=1024)
+    console.print()
 
-    config.agent_name = prompt_with_style(
-        "What should we call your agent?",
-        default=config.display_name,
+
+def collect_network(config: ProjectContext, skip: bool = False) -> None:
+    """Collect network selection."""
+    if skip:
+        success("Using default network (testnet)")
+        return
+
+    header("Network", "🌐")
+    config.yml.runtime.network = cast(
+        Literal["testnet", "mainnet"],
+        prompt_choice(
+            "Which Fetch network?",
+            choices=["testnet", "mainnet"],
+            default=config.yml.runtime.network,
+        ),
     )
     console.print()
-    logger.info(f"Agent name set to: {config.agent_name}")
 
-    hint("Your seed phrase is like a password - keep it safe!")
-    config.agent_seed_phrase = prompt_with_style(
-        "Agent seed phrase",
-        default=config.agent_seed_phrase,
+
+def collect_postgres(config: ProjectContext, skip: bool = False) -> None:
+    """Collect Postgres connection settings."""
+    if skip:
+        success("Using default Postgres settings")
+        return
+
+    header("Postgres", "🗄️")
+    secrets = config.secrets
+    secrets.postgres_host = prompt_with_style("Host", default=secrets.postgres_host)
+    secrets.postgres_port = prompt_int("Port", default=secrets.postgres_port, minimum=1)
+    secrets.postgres_database = prompt_with_style(
+        "Database", default=secrets.postgres_database
+    )
+    secrets.postgres_user = prompt_with_style("User", default=secrets.postgres_user)
+    secrets.postgres_password = prompt_with_style(
+        "Password",
+        default=secrets.postgres_password,
         password=True,
     )
     console.print()
-    logger.info("Agent seed phrase configured")
-
-    config.agent_port = prompt_int(
-        "Which port should your agent run on?",
-        default=config.agent_port,
-    )
-    console.print()
-    logger.info(f"Agent port set to: {config.agent_port}")
-
-    config.agent_description = prompt_with_style(
-        "Describe your agent in a few words",
-        default=config.agent_description,
-    )
-    console.print()
-    logger.info(f"Agent description set to: {config.agent_description}")
 
 
-def collect_hosting_info(config: AgentContext, skip: bool = False) -> None:
-    """Collect hosting information."""
-    logger.info("Collecting hosting information" + (" (skipped)" if skip else ""))
+def collect_agentverse(config: ProjectContext, skip: bool = False) -> None:
+    """Collect optional Agentverse credentials."""
     if skip:
-        success("Using default hosting configuration")
+        success("Skipping Agentverse credentials")
         return
 
-    header("Hosting Configuration", "🌐")
+    header("Agentverse", "🔑")
+    hint("Optional — set AGENTVERSE_API_KEY in .env later to enable registration")
 
-    config.hosting_address = prompt_with_style(
-        "Hosting address",
-        default=config.hosting_address,
-    )
+    if Confirm.ask(
+        "   [bold]Add Agentverse API key now?[/bold]", default=False, console=console
+    ):
+        config.secrets.agentverse_api_key = prompt_with_style(
+            "Agentverse API key",
+            password=True,
+        )
+
+    if Confirm.ask(
+        "   [bold]Set agent seed now?[/bold]", default=False, console=console
+    ):
+        config.secrets.agent_seed = prompt_with_style(
+            "Agent seed",
+            default=config.secrets.agent_seed,
+            password=True,
+        )
     console.print()
-    logger.info(f"Hosting address set to: {config.hosting_address}")
 
-    config.hosting_port = prompt_int(
-        "Hosting port",
-        default=config.hosting_port,
+
+def collect_payment_methods(config: ProjectContext, skip: bool = False) -> None:
+    """Collect payment method toggles and provider secrets."""
+    if skip:
+        success("Using default payment methods (FET only)")
+        return
+
+    header("Payments", "💳")
+    methods = config.yml.protocols.payment.methods
+
+    methods.fet = PaymentMethodState(
+        prompt_choice(
+            "FET payments", ["enabled", "disabled"], default=methods.fet.value
+        )
     )
+    methods.stripe = PaymentMethodState(
+        prompt_choice(
+            "Stripe payments", ["enabled", "disabled"], default=methods.stripe.value
+        )
+    )
+    methods.skyfire = PaymentMethodState(
+        prompt_choice(
+            "Skyfire payments", ["enabled", "disabled"], default=methods.skyfire.value
+        )
+    )
+
+    secrets = config.secrets
+    if methods.stripe is PaymentMethodState.ENABLED:
+        secrets.stripe_secret_key = prompt_with_style(
+            "Stripe secret key", password=True
+        )
+        secrets.stripe_publishable_key = prompt_with_style(
+            "Stripe publishable key", password=True
+        )
+    if methods.skyfire is PaymentMethodState.ENABLED:
+        secrets.skyfire_api_key = prompt_with_style("Skyfire API key", password=True)
+        secrets.skyfire_seller_account_id = prompt_with_style(
+            "Skyfire seller account ID", password=True
+        )
+        secrets.skyfire_service_id = prompt_with_style(
+            "Skyfire service ID", password=True
+        )
     console.print()
-    logger.info(f"Hosting port set to: {config.hosting_port}")
 
 
-def collect_advanced_info(config: AgentContext, skip: bool = False) -> None:
-    """Collect advanced performance and rate limiting settings."""
-    logger.info("Collecting advanced settings" + (" (skipped)" if skip else ""))
+def collect_advanced_runtime(config: ProjectContext, skip: bool = False) -> None:
+    """Collect advanced runtime and protocol settings."""
     if skip:
         success("Using default advanced settings")
         return
 
     header("Advanced Settings", "🔧")
-
-    hint("These settings control message processing and rate limiting")
-
-    config.max_processed_messages = prompt_int(
-        "Maximum processed messages to track",
-        default=config.max_processed_messages,
+    runtime = config.yml.runtime
+    runtime.log_level = cast(
+        Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        prompt_choice(
+            "Log level",
+            ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+            default=runtime.log_level,
+        ),
     )
-    console.print()
-    logger.info(f"Max processed messages set to: {config.max_processed_messages}")
-
-    config.processed_message_ttl_minutes = prompt_int(
-        "Processed message TTL (minutes)",
-        default=config.processed_message_ttl_minutes,
+    runtime.max_concurrent_sessions = prompt_int(
+        "Max concurrent sessions",
+        default=runtime.max_concurrent_sessions,
+        minimum=1,
     )
-    console.print()
-    logger.info(f"Processed message TTL set to: {config.processed_message_ttl_minutes}")
 
-    config.cleanup_interval_seconds = prompt_int(
-        "Cleanup interval (seconds, min 10)",
-        default=config.cleanup_interval_seconds,
-    )
-    console.print()
-    logger.info(f"Cleanup interval set to: {config.cleanup_interval_seconds}")
-
-    console.print()
-    hint("Rate limiting protects your agent from excessive requests")
-
-    config.rate_limit_max_requests = prompt_int(
-        "Max requests per window",
-        default=config.rate_limit_max_requests,
-    )
-    console.print()
-    logger.info(f"Rate limit max requests set to: {config.rate_limit_max_requests}")
-
-    config.rate_limit_window_minutes = prompt_int(
-        "Rate limit window (minutes)",
-        default=config.rate_limit_window_minutes,
-    )
-    console.print()
-    logger.info(f"Rate limit window set to: {config.rate_limit_window_minutes}")
-
-
-def collect_environment_and_keys(config: AgentContext, skip: bool = False) -> None:
-    """Collect environment and API keys."""
-    logger.info("Collecting environment and API keys" + (" (skipped)" if skip else ""))
-    if skip:
-        success("Skipping API keys (you can add them later)")
-        return
-
-    header("Environment Configuration", "⚙️")
-
-    config.env = prompt_choice(
-        "Which environment are you deploying to?",
-        choices=["development", "production"],
-        default=config.env,
-    )
-    console.print()
-    logger.info(f"Environment set to: {config.env}")
-
-    console.print()
-    hint("API keys are optional - you can add them to .env later")
-
-    if Confirm.ask(
-        "   [bold]🔑 Add AgentVerse API Key now?[/bold]", default=False, console=console
-    ):
-        config.agentverse_api_key = prompt_with_style(
-            "AgentVerse API Key",
-            password=True,
+    for protocol_name in ("chat", "payment"):
+        protocol = getattr(config.yml.protocols, protocol_name)
+        protocol.maximum_processing_time_seconds = prompt_int(
+            f"{protocol_name} max processing time (seconds)",
+            default=protocol.maximum_processing_time_seconds,
+            minimum=1,
         )
-        console.print()
-        logger.info("AgentVerse API key configured")
-    else:
-        logger.debug("AgentVerse API key skipped")
-
-
-def display_summary(config: AgentContext) -> None:
-    """Display configuration summary using Rich table."""
-    logger.debug("Displaying configuration summary")
+        protocol.rate_limits.session.max_requests = prompt_int(
+            f"{protocol_name} session max requests",
+            default=protocol.rate_limits.session.max_requests,
+            minimum=1,
+        )
+        protocol.rate_limits.user.max_requests = prompt_int(
+            f"{protocol_name} user max requests",
+            default=protocol.rate_limits.user.max_requests,
+            minimum=1,
+        )
     console.print()
 
-    # Create summary panel
-    summary_text = Text()
 
-    # Agent Info
-    summary_text.append("🤖 Agent\n", style="bold cyan")
-    summary_text.append("   Name        : ", style="dim")
-    summary_text.append(f"{config.display_name}\n", style="bold white")
-    summary_text.append("   Port        : ", style="dim")
-    summary_text.append(f"{config.agent_port}\n", style="white")
-    summary_text.append("   Seed Phrase : ", style="dim")
-    summary_text.append(f"{config.agent_seed_phrase[:8]}{'•' * 10}\n", style="yellow")
-    summary_text.append("   Description : ", style="dim")
-    summary_text.append(f"{config.agent_description}\n\n", style="white")
+def display_summary(config: ProjectContext) -> None:
+    """Display configuration summary."""
+    console.print()
+    summary = Text()
+    agent = config.yml.agent
+    runtime = config.yml.runtime
+    methods = config.yml.protocols.payment.methods
 
-    # Hosting
-    summary_text.append("🌐 Hosting\n", style="bold cyan")
-    summary_text.append("   Address : ", style="dim")
-    summary_text.append(f"{config.hosting_address}\n", style="white")
-    summary_text.append("   Port    : ", style="dim")
-    summary_text.append(f"{config.hosting_port}\n\n", style="white")
+    summary.append("🤖 Agent\n", style="bold cyan")
+    summary.append(f"   Name  : {agent.name}\n", style="white")
+    summary.append(f"   Handle: {agent.handle}\n", style="white")
+    summary.append(f"   Port  : {agent.port}\n\n", style="white")
 
-    # Environment
-    summary_text.append("⚙️  Environment\n", style="bold cyan")
-    summary_text.append("   Mode : ", style="dim")
-    env_style = "bold green" if config.env == "development" else "bold red"
-    summary_text.append(f"{config.env}\n", style=env_style)
+    summary.append("🌐 Runtime\n", style="bold cyan")
+    summary.append(f"   Network : {runtime.network}\n", style="white")
+    summary.append(f"   Log     : {runtime.log_level}\n\n", style="white")
 
-    summary_text.append("   AgentVerse API Key : ", style="dim")
-    if config.agentverse_api_key:
-        summary_text.append(f"{config.agentverse_api_key[:8]}•••\n\n", style="white")
-    else:
-        summary_text.append("Not set\n\n", style="dim yellow")
+    summary.append("🗄️  Postgres\n", style="bold cyan")
+    summary.append(f"   Host : {config.secrets.postgres_host}\n", style="white")
+    summary.append(f"   Port : {config.secrets.postgres_port}\n", style="white")
+    summary.append(f"   DB   : {config.secrets.postgres_database}\n\n", style="white")
 
-    # Advanced Settings
-    summary_text.append("🔧 Advanced Settings\n", style="bold cyan")
-    summary_text.append("   Max Processed Messages : ", style="dim")
-    summary_text.append(f"{config.max_processed_messages}\n", style="white")
-    summary_text.append("   Message TTL            : ", style="dim")
-    summary_text.append(f"{config.processed_message_ttl_minutes} min\n", style="white")
-    summary_text.append("   Cleanup Interval       : ", style="dim")
-    summary_text.append(f"{config.cleanup_interval_seconds} sec\n", style="white")
-    summary_text.append("   Rate Limit             : ", style="dim")
-    summary_text.append(
-        f"{config.rate_limit_max_requests} req / {config.rate_limit_window_minutes} min",
+    summary.append("💳 Payments\n", style="bold cyan")
+    summary.append(
+        f"   FET={methods.fet.value}  Stripe={methods.stripe.value}  "
+        f"Skyfire={methods.skyfire.value}\n\n",
         style="white",
     )
 
+    summary.append("🔑 Agentverse\n", style="bold cyan")
+    if config.secrets.agentverse_api_key:
+        summary.append("   API key: set\n", style="green")
+    else:
+        summary.append("   API key: not set\n", style="yellow")
+
     panel = Panel(
-        summary_text,
+        summary,
         title="[bold white]📋 Your Configuration[/bold white]",
         border_style="blue",
         padding=(1, 2),
     )
-
     console.print(panel)
     console.print()
-
-    logger.info(
-        f"Configuration summary: agent={config.display_name}, "
-        f"port={config.agent_port}, env={config.env}"
-    )
 
 
 def divider() -> None:
@@ -322,92 +328,72 @@ def divider() -> None:
 class UserAbortError(typer.Abort):
     """Custom exception for user aborting the setup."""
 
-    pass
 
-
-def collect_configuration(default: bool, advanced: bool) -> AgentContext:
-    """
-    Interactive configuration wizard with delightful UX.
-    """
-    logger.info(
-        f"Starting configuration wizard (default={default}, advanced={advanced})"
-    )
-    config = AgentContext()
-
+def collect_configuration(default: bool, advanced: bool) -> ProjectContext:
+    """Interactive configuration wizard."""
     if default:
-        logger.info("Using quick start mode with default configuration")
         console.clear()
         console.print()
         console.print("[bold green]   ⚡ Quick Start Mode[/bold green]")
+        config = ProjectContext.create_default()
         success("Using default configuration for rapid setup")
         display_summary(config)
         return config
 
-    # Welcome screen
     console.clear()
     console.print()
-
-    welcome_panel = Panel(
-        "[bold white]🚀 AgentVerse Agent Setup[/bold white]\n\n"
-        "[dim]Welcome! Let's create your agent together.\n"
+    welcome = Panel(
+        "[bold white]🚀 uAgents Project Setup[/bold white]\n\n"
+        "[dim]Scaffold a production-ready multipod uAgents project.\n"
         "Press Ctrl+C anytime to cancel.[/dim]",
         border_style="magenta",
         padding=(1, 2),
     )
-    console.print(welcome_panel)
-    logger.debug("Welcome screen displayed")
+    console.print(welcome)
 
-    # Collect configuration in sections
-    collect_agent_info(config, skip=default)
+    config = ProjectContext.create_default()
+    collect_identity(config, skip=False)
+    collect_network(config, skip=False)
+    collect_postgres(config, skip=False)
+    collect_agentverse(config, skip=False)
 
     if advanced:
-        logger.debug("Advanced mode enabled")
         divider()
-        configure_hosting = Confirm.ask(
-            "[bold]🌐 Configure custom hosting settings?[/bold]",
-            default=False,
-            console=console,
-        )
-        logger.debug(f"Configure hosting: {configure_hosting}")
-        collect_hosting_info(config, skip=not configure_hosting)
+        if Confirm.ask(
+            "[bold]💳 Configure payment methods?[/bold]", default=False, console=console
+        ):
+            collect_payment_methods(config, skip=False)
+        else:
+            collect_payment_methods(config, skip=True)
 
         divider()
-        configure_env = Confirm.ask(
-            "[bold]⚙️  Configure environment & API keys?[/bold]",
-            default=True,
-            console=console,
-        )
-        logger.debug(f"Configure environment: {configure_env}")
-        collect_environment_and_keys(config, skip=not configure_env)
-
-        divider()
-        configure_advanced = Confirm.ask(
-            "[bold]🔧 Configure advanced settings (rate limits, cleanup)?[/bold]",
+        if Confirm.ask(
+            "[bold]🔧 Configure advanced runtime settings?[/bold]",
             default=False,
             console=console,
-        )
-        logger.debug(f"Configure advanced settings: {configure_advanced}")
-        collect_advanced_info(config, skip=not configure_advanced)
+        ):
+            collect_advanced_runtime(config, skip=False)
+        else:
+            collect_advanced_runtime(config, skip=True)
     else:
-        logger.debug("Standard mode - skipping advanced options")
-        collect_hosting_info(config, skip=True)
-        collect_environment_and_keys(config, skip=True)
-        collect_advanced_info(config, skip=True)
+        collect_payment_methods(config, skip=True)
+        collect_advanced_runtime(config, skip=True)
 
-    # Display summary and confirm
     display_summary(config)
 
     if not Confirm.ask(
-        "   [bold green]✨ Ready to create your agent?[/bold green]",
+        "   [bold green]✨ Ready to create your project?[/bold green]",
         default=True,
         console=console,
     ):
-        logger.warning("User cancelled setup at confirmation")
         console.print()
         console.print("[red]   ✖ Setup cancelled[/red]")
         raise UserAbortError()
 
     console.print()
-    success("Configuration complete! Creating your agent...")
-    logger.info("Configuration wizard completed successfully")
-    return config
+    success("Configuration complete! Creating your project...")
+    try:
+        return config.revalidated()
+    except ContextError as exc:
+        console.print(f"[red]   ✖ Invalid configuration: {exc}[/red]")
+        raise UserAbortError() from exc

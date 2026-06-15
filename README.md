@@ -6,103 +6,70 @@
 [![License](https://img.shields.io/github/license/tejus3131/create-agentverse-agent)](LICENSE)
 [![CI](https://github.com/tejus3131/create-agentverse-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/tejus3131/create-agentverse-agent/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-github--pages-blue)](https://create-agentverse-agent.tech/)
-[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://black.readthedocs.io/)
-[![Ruff](https://img.shields.io/badge/lint-ruff-red)](https://docs.astral.sh/ruff/)
-[![Mypy](https://img.shields.io/badge/type%20check-mypy-blue)](https://mypy.readthedocs.io/)
 
-> 📖 **Full Documentation:** [create-agentverse-agent.tech](https://create-agentverse-agent.tech/)
+> **Full Documentation:** [create-agentverse-agent.tech](https://create-agentverse-agent.tech/)
 
-A CLI tool to scaffold **production-ready uAgents** with best practices baked in — in seconds.
+CLI to scaffold **production-ready uAgents** with a Postgres-backed multipod runtime, chat + payment protocols, and Agentverse registration.
 
 ---
 
-## 🚀 Why this exists
+## Why this exists
 
-Building agents with **uAgents** is powerful, but setting things up *correctly* every time is not trivial.
+Building agents with **uAgents** is powerful, but a production-grade setup — Postgres coordination, rate limits, payments, multipod runtime — is a lot to hand-roll every time.
 
-This tool solves that by generating a **production-grade agent scaffold** with:
+This tool generates a complete project in seconds:
 
-- ⚡ Parallel message processing
-- 🧠 Context-aware logging
-- 📡 Progress / status message support
-- 🩺 Built-in health & quota protocol
-- 🤖 Agentverse-compatible Agents
-- 🧱 Clean, extensible project structure
-- 🛠 Sensible defaults that don’t fight you later
-
-Instead of starting from scratch (or copying old projects), you get a **clean, consistent, battle-tested starting point** every time.
+- Postgres-backed work queue, session locks, and idempotency
+- Chat and payment protocol wiring
+- FET, Stripe, and Skyfire payment support (configurable)
+- Smart Agentverse registration on startup
+- Dual config: `agent.yml` (non-secret) + `.env` (secrets)
+- Docker Compose for local Postgres + agent
+- uv-based Python 3.13 workflow
 
 ---
 
-## 👥 Who is this for?
+## Prerequisites
 
-This tool is designed for **all of the following**:
+**CLI tool:** Python 3.12+, [uv](https://github.com/astral-sh/uv) (recommended)
 
-- uAgents developers
-- Agentverse builders
-- Hackathon & rapid-prototyping teams
-- Python developers who want a clean CLI-driven workflow
+**Generated projects:** Python 3.13, uv, Docker (Postgres via Compose)
 
-If you build agents more than once — this saves you time.
+Test the CLI from a local checkout:
+
+```bash
+uvx --from . create-agentverse-agent -d
+```
 
 ---
 
-## 📦 Installation
+## Installation
 
-> 📦 PyPI: [https://pypi.org/project/create-agentverse-agent/](https://pypi.org/project/create-agentverse-agent/)
-
-### ⭐ Recommended: `uvx` (no install, like `npx`)
+### Recommended: `uvx` (no install)
 
 ```bash
 uvx create-agentverse-agent
 ```
 
-That’s it. No environment pollution, no setup.
-
----
-
-### Using `pipx` (global, isolated)
+### Other methods
 
 ```bash
 pipx install create-agentverse-agent
-create-agentverse-agent
-```
-
----
-
-### Using `pip`
-
-```bash
+# or
 pip install create-agentverse-agent
-create-agentverse-agent
 ```
 
 ---
 
-### Using Poetry
+## Usage
 
-```bash
-poetry add create-agentverse-agent
-poetry run create-agentverse-agent
-```
-
----
-
-## 🧑‍💻 Usage
-
-### Interactive setup (recommended)
-
-Launch the interactive wizard to configure your agent step by step:
+### Interactive setup
 
 ```bash
 uvx create-agentverse-agent
 ```
 
----
-
 ### Quick start with defaults
-
-Skip all prompts and generate an agent using sensible defaults:
 
 ```bash
 uvx create-agentverse-agent --default
@@ -110,13 +77,7 @@ uvx create-agentverse-agent --default
 uvx create-agentverse-agent -d
 ```
 
-Ideal for rapid prototyping, automation, or CI pipelines.
-
----
-
-### Advanced configuration mode
-
-Enable **advanced mode** to access all available configuration options:
+### Advanced configuration
 
 ```bash
 uvx create-agentverse-agent --advanced
@@ -124,132 +85,79 @@ uvx create-agentverse-agent --advanced
 uvx create-agentverse-agent -a
 ```
 
-Use this if you want full control over the generated agent setup.
-
----
-
 ### Overwrite existing project
-
-If a project already exists in the target directory, you can overwrite it:
 
 ```bash
 uvx create-agentverse-agent --overwrite
-# or
-uvx create-agentverse-agent -o
 ```
 
-⚠️ This will replace existing files.
-
----
-
-### Debug mode
-
-Run the CLI with debug logging enabled.
-A detailed log file will be created in the current directory:
+### Debug logging
 
 ```bash
 uvx create-agentverse-agent --debug
 ```
 
-Log file format:
-
-```
-create-agentverse-agent-<version>-cli-execution-<uuid>.log
-```
-
-Useful for troubleshooting or reporting issues.
-
 ---
 
-### Show version
+## What gets generated?
 
-Display the installed version and exit:
+```
+my-agent/
+├── agent.yml              # Identity, protocols, runtime config
+├── .env                   # Secrets (Postgres, API keys)
+├── .env.example           # Reference for env vars
+├── AGENTVERSE.md          # Agentverse profile readme
+├── schema.sql             # Postgres coordination schema
+├── docker-compose.yml     # Local Postgres + agent
+├── Dockerfile             # Container build
+├── pyproject.toml         # uv / hatch project
+├── uv.lock                # Locked dependencies
+├── Makefile               # db, test, run, down
+├── src/agent/handler.py   # Your handler (edit this)
+├── src/runtime/           # Framework runtime
+└── src/shared/            # Settings and types
+```
+
+### After scaffolding
 
 ```bash
-uvx create-agentverse-agent --version
-# or
-uvx create-agentverse-agent -v
+cd my-agent
+uv sync
+make test    # Postgres in Docker + agent on host
 ```
 
----
-
-### Help
-
-Show the full help message with all options and examples:
-
-```bash
-uvx create-agentverse-agent --help
-```
+Or full stack: `make run`. See `make help`.
 
 ---
 
-## 🧱 What gets generated?
-
-The scaffold is designed to be **production-ready from day one**, not a demo:
-
-* Agent entrypoint
-* Proper async message handling
-* Agentverse-compatible configuration
-* Logging & context utilities
-* Health & quota protocol support
-* Docker & Docker Compose templates
-* Clean dependency management
-* Minimal but extensible structure
-
-You can ship this, not just demo it.
-
----
-
-## 📚 Documentation
-
-Full documentation is available at **[create-agentverse-agent.tech](https://create-agentverse-agent.tech/)**
+## Documentation
 
 | Guide | Description |
-|-------|-------------|
-| [Installation](https://create-agentverse-agent.tech/installation) | Multiple installation methods |
-| [Usage](https://create-agentverse-agent.tech/usage) | CLI options and examples |
-| [Generated Structure](https://create-agentverse-agent.tech/structure) | What gets created |
-| [Configuration](https://create-agentverse-agent.tech/configuration) | Customization options |
+| --- | --- |
+| [Installation](https://create-agentverse-agent.tech/installation) | Install methods |
+| [Getting Started](https://create-agentverse-agent.tech/getting-started) | End-to-end tutorial |
+| [Usage](https://create-agentverse-agent.tech/usage) | CLI options |
+| [Generated Structure](https://create-agentverse-agent.tech/structure) | Project layout |
+| [Configuration](https://create-agentverse-agent.tech/configuration) | agent.yml + .env reference |
+| [Architecture](https://create-agentverse-agent.tech/architecture) | Runtime design |
+| [Handler Guide](https://create-agentverse-agent.tech/handler) | Writing agent logic |
+| [Agentverse](https://create-agentverse-agent.tech/agentverse) | Registration and profile |
+| [Migration](https://create-agentverse-agent.tech/migration) | Upgrading from 0.2.x |
 
 ---
 
-## 🧠 Design philosophy
+## Author
 
-* **Opinionated, but not restrictive**
-* **Defaults that scale**
-* **Explicit over clever**
-* **Production first, demos second**
-
-This tool exists because repeatedly hand-rolling agent scaffolds is boring — and error-prone.
+**Tejus Gupta** — [tejusgupta.dev](https://tejusgupta.dev)
 
 ---
 
-## 🧑‍🏫 Author
+## License
 
-**Tejus Gupta**
-🌐 [https://tejusgupta.dev](https://tejusgupta.dev)
-📧 [hello@tejusgupta.dev](mailto:hello@tejusgupta.dev)
-
-Built as a weekend project — because sometimes the best tools come from *personal pain* 😭
+MIT — see [LICENSE](LICENSE).
 
 ---
 
-## 📄 License
+## Contributing
 
-MIT License.
-See [`LICENSE`](LICENSE) for details.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome!
-
-Please read:
-- [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines
-- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) to understand community expectations
-- [CHANGELOG.md](CHANGELOG.md) to see recent changes
-
----
-
-Made with ❤️ by [Tejus Gupta](https://tejusgupta.dev).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Runtime bundle sync procedure documented there.

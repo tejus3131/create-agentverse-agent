@@ -1,0 +1,50 @@
+# Copyright (c) 2026 {{ author_name }}
+"""{{ display_name }} — agent handler."""
+
+from logging import getLogger
+
+from shared import AgentDefinition, HandlerRequest, HandlerResponse, TextReply
+
+logger = getLogger(__name__)
+
+
+def on_startup() -> None:
+    """Startup hook."""
+    logger.info("{{ display_name }} starting up")
+
+
+def on_shutdown() -> None:
+    """Shutdown hook."""
+    logger.info("{{ display_name }} shutting down")
+
+
+def on_message(
+    *, user_id: str, session_id: str, message_id: str, request: HandlerRequest
+) -> HandlerResponse:
+    """Handle an inbound chat message.
+
+    Args:
+        user_id: Sender user ID.
+        session_id: Conversation session ID.
+        message_id: Unique message ID.
+        request: Parsed inbound request.
+
+    Returns:
+        Response to send back to the user.
+    """
+    logger.info(
+        "message user=%s session=%s id=%s text=%r",
+        user_id,
+        session_id,
+        message_id,
+        getattr(request, "text", None),
+    )
+    text = getattr(request, "text", "") or ""
+    return TextReply(text=f"Hello from {{ display_name }}! You said: {text}")
+
+
+definition = AgentDefinition(
+    on_startup=[on_startup],
+    on_shutdown=[on_shutdown],
+    on_message=on_message,
+)

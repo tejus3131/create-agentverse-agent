@@ -149,7 +149,7 @@ class TestSubmoduleAccess:
         """Test that context module is accessible."""
         from create_agentverse_agent import context
 
-        assert hasattr(context, "AgentContext")
+        assert hasattr(context, "ProjectContext")
 
     def test_prompts_module_accessible(self) -> None:
         """Test that prompts module is accessible."""

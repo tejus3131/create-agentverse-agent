@@ -1,0 +1,54 @@
+# {{ display_name }}
+
+{{ yml.agent.description }}
+
+Production-ready uAgents project scaffolded with [create-agentverse-agent](https://create-agentverse-agent.tech/).
+
+## Prerequisites
+
+- Python **3.13**
+- [uv](https://github.com/astral-sh/uv)
+- Docker (Postgres via Compose)
+
+## Quick start
+
+```bash
+uv sync
+make test    # Postgres in Docker + agent on host (uv run agent)
+```
+
+Or run the full stack in Docker:
+
+```bash
+make run
+```
+
+See `make help` for all commands (`db`, `test`, `run`, `down`).
+
+## Configuration
+
+- **`agent.yml`** — agent identity, protocols, rate limits, runtime settings
+- **`.env`** — secrets (Postgres, Agentverse API key, payment provider keys)
+- **`.env.example`** — reference for available env vars
+
+## Project layout
+
+```
+{{ project_name }}/
+├── agent.yml           # Non-secret configuration
+├── .env                # Secrets (never commit)
+├── .env.example        # Env var reference
+├── AGENTVERSE.md       # Agentverse profile readme (published on register)
+├── schema.sql          # Postgres coordination schema
+├── docker-compose.yml  # Local Postgres + agent
+├── Makefile            # db, test, run, down
+├── src/agent/handler.py  # Your handler (edit this)
+├── src/runtime/        # Framework runtime (do not edit unless extending)
+└── src/shared/         # Settings and shared types
+```
+
+## Agentverse
+
+Set `AGENTVERSE_API_KEY` in `.env` to register automatically on startup. Edit `AGENTVERSE.md` for your Agentverse profile page.
+
+Handle: `{{ yml.agent.handle }}` | Network: `{{ yml.runtime.network }}`
