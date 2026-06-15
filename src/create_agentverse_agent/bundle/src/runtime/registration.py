@@ -10,15 +10,18 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import aiohttp
 from pydantic import BaseModel
-from shared.settings import PROJECT_ROOT
 from uagents.mailbox import AgentverseConnectRequest, register_in_agentverse
 from uagents_core.registration import AgentProfile, RegistrationRequest
+
+from shared.settings import PROJECT_ROOT
 
 if TYPE_CHECKING:
     from uagents import Agent
     from uagents_core.config import AgentverseConfig
     from uagents_core.identity import Identity
     from uagents_core.types import AddressPrefix, AgentEndpoint
+
+    from shared.settings import Settings
 
 Action = Literal["noop", "registered", "updated", "failed"]
 
@@ -468,19 +471,37 @@ def details_from_agent(
     agent: Agent,
     *,
     handle: str | None = None,
+    settings: Settings | None = None,
 ) -> AgentverseRegistrationDetails:
-    """Build desired registration details from a uAgents Agent instance.
+    """Build desired registration details from settings and a uAgents Agent.
+
+    Profile fields prefer ``agent.yml`` when *settings* is provided; readme comes
+    from ``AGENTVERSE.md`` at project root, then the agent's loaded readme.
 
     Args:
         agent: The agent to build the registration details from.
         handle: The handle to use for the registration.
+        settings: Loaded ``agent.yml`` config (recommended).
 
     Returns:
         The desired registration details.
     """
-    resolved_handle = handle
+    agent_cfg = settings.agent if settings is not None else None
+    resolved_handle = handle or (agent_cfg.handle if agent_cfg is not None else None)
     agent_readme = getattr(agent, "_readme", None) or ""
     readme = load_agentverse_readme() or agent_readme
+    if agent_cfg is not None:
+        return AgentverseRegistrationDetails(
+            name=agent_cfg.name,
+            handle=resolved_handle,
+            description=agent_cfg.description,
+            readme=readme,
+            avatar_url=agent_cfg.avatar_url or "",
+            banner_url=agent_cfg.banner_url or "",
+            metadata=getattr(agent, "metadata", None) or None,
+            agent_type="mailbox" if getattr(agent, "_use_mailbox", False) else "uagent",
+            require_mailbox=bool(getattr(agent, "_use_mailbox", False)),
+        )
     return AgentverseRegistrationDetails(
         name=agent.name,
         handle=resolved_handle,
@@ -499,6 +520,7 @@ async def register_agent_to_agentverse(
     user_token: str,
     *,
     handle: str | None = None,
+    settings: Settings | None = None,
     session: aiohttp.ClientSession | None = None,
 ) -> AgentverseRegistrationResult:
     """Convenience wrapper around register_to_agentverse for a uAgents Agent.
@@ -507,12 +529,13 @@ async def register_agent_to_agentverse(
         agent: The agent to register.
         user_token: The user token to use for authentication.
         handle: The handle to use for the registration.
+        settings: Loaded ``agent.yml`` config for profile fields and readme path.
         session: The aiohttp ClientSession to use.
 
     Returns:
         The result of the registration.
     """
-    desired = details_from_agent(agent, handle=handle)
+    desired = details_from_agent(agent, handle=handle, settings=settings)
     endpoint_url = agent._endpoints[0].url if agent._endpoints else None
     return await register_to_agentverse(
         identity=agent._identity,

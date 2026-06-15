@@ -46,6 +46,14 @@ class PaymentData(TypedDict):
     idempotency_key: IdempotencyKey
 
 
+class AcceptedFund(TypedDict):
+    """One accepted payment option from a RequestPayment."""
+
+    amount: str
+    currency: Currency
+    payment_method: str
+
+
 class ActivePayment(TypedDict):
     """Pending payment tracked while user completes checkout."""
 
@@ -56,6 +64,7 @@ class ActivePayment(TypedDict):
     amount: NotRequired[Amount]
     currency: NotRequired[Currency]
     payment_method: NotRequired[str]
+    accepted_funds: NotRequired[list[AcceptedFund]]
 
 
 class PaymentContext(BaseModel):
@@ -159,6 +168,8 @@ def active_payment_to_storage(active: ActivePayment) -> dict[str, Any]:
         payload["currency"] = active["currency"]
     if "payment_method" in active:
         payload["payment_method"] = active["payment_method"]
+    if "accepted_funds" in active:
+        payload["accepted_funds"] = active["accepted_funds"]
     return payload
 
 
@@ -185,4 +196,24 @@ def active_payment_from_storage(data: dict[str, Any]) -> ActivePayment:
     payment_method_raw = data.get("payment_method")
     if payment_method_raw is not None:
         active["payment_method"] = str(payment_method_raw)
+    accepted_funds_raw = data.get("accepted_funds")
+    if isinstance(accepted_funds_raw, list):
+        accepted_funds: list[AcceptedFund] = []
+        for entry in accepted_funds_raw:
+            if not isinstance(entry, dict):
+                continue
+            amount_raw = entry.get("amount")
+            currency_raw = entry.get("currency")
+            method_raw = entry.get("payment_method")
+            if amount_raw is None or currency_raw is None or method_raw is None:
+                continue
+            accepted_funds.append(
+                AcceptedFund(
+                    amount=str(amount_raw),
+                    currency=str(currency_raw),
+                    payment_method=str(method_raw),
+                )
+            )
+        if accepted_funds:
+            active["accepted_funds"] = accepted_funds
     return active

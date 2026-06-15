@@ -71,6 +71,7 @@ from runtime.payments.stripe import (
 from runtime.payments.types import (
     FET,
     USDC,
+    AcceptedFund,
     ActivePayment,
     Amount,
     Currency,
@@ -447,6 +448,15 @@ def create_payment_request(
         reference=data["idempotency_key"],
     )
 
+    stored_accepted_funds: list[AcceptedFund] = [
+        AcceptedFund(
+            amount=funds.amount,
+            currency=funds.currency,
+            payment_method=funds.payment_method,
+        )
+        for funds in accepted_funds
+    ]
+
     active_payment = ActivePayment(
         usdc=amount_usdc,
         fet=amount_fet,
@@ -454,8 +464,13 @@ def create_payment_request(
         message_id=context.message_id,
         amount=data["amount"],
         currency=data["currency"],
-        payment_method=accepted_funds[0].payment_method if accepted_funds else "",
     )
+    if stored_accepted_funds:
+        active_payment["accepted_funds"] = stored_accepted_funds
+        if len(stored_accepted_funds) == 1:
+            active_payment["payment_method"] = stored_accepted_funds[0][
+                "payment_method"
+            ]
 
     context.logger.info(
         "[PaymentManager]: %s | %s | %s | Payment request created.",
@@ -479,7 +494,7 @@ def create_payment_request(
 # =============================================================================
 
 
-async def verify_payment(
+async def verify_payment(  # noqa: PLR0911
     transaction_id: TransactionID,
     funds: Funds,
     context: PaymentContext,
