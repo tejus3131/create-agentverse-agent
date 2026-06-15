@@ -10,18 +10,16 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import aiohttp
 from pydantic import BaseModel
+from shared.settings import PROJECT_ROOT
 from uagents.mailbox import AgentverseConnectRequest, register_in_agentverse
 from uagents_core.registration import AgentProfile, RegistrationRequest
 
-from shared.settings import PROJECT_ROOT
-
 if TYPE_CHECKING:
+    from shared.settings import Settings
     from uagents import Agent
     from uagents_core.config import AgentverseConfig
     from uagents_core.identity import Identity
     from uagents_core.types import AddressPrefix, AgentEndpoint
-
-    from shared.settings import Settings
 
 Action = Literal["noop", "registered", "updated", "failed"]
 

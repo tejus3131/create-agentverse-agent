@@ -50,11 +50,7 @@ def verify_commit_funds(funds: Funds, active: ActivePayment) -> str | None:
             )
         expected_amount = Decimal(str(matched["amount"]))
         expected_currency = matched["currency"]
-    elif (
-        "amount" in active
-        and "currency" in active
-        and "payment_method" in active
-    ):
+    elif "amount" in active and "currency" in active and "payment_method" in active:
         expected_amount = active["amount"]
         expected_currency = active["currency"]
         if _normalize_payment_method(funds.payment_method) != _normalize_payment_method(

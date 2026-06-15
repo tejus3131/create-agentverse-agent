@@ -9,12 +9,11 @@ from typing import TYPE_CHECKING
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from shared.db import AgentRuntime
     from uagents import Context
 
-    from shared.db import AgentRuntime
 
-
-async def coordinator_tick(runtime: AgentRuntime, ctx: Context) -> None:  # noqa: ARG001
+async def coordinator_tick(runtime: AgentRuntime, ctx: Context) -> None:
     """Heartbeat worker and reclaim stale coordination state.
 
     Drain / ``pipeline.drain_pending_work`` deferred to phase 6/7.

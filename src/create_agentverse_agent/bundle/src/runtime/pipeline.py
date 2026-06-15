@@ -8,9 +8,6 @@ import inspect
 import logging
 from typing import TYPE_CHECKING, Any
 
-from runtime.payload import payload_to_handler_request
-from runtime.protocols.session_context import external_context_for_inbound
-from runtime.protocols.transport import UAgentsTransport
 from shared.db import (
     AgentRuntime,
     ClaimDecision,
@@ -22,16 +19,20 @@ from shared.db import (
 )
 from shared.types import PaymentRequest, TextReply
 
-if TYPE_CHECKING:
-    from uagents import Context
+from runtime.payload import payload_to_handler_request
+from runtime.protocols.session_context import external_context_for_inbound
+from runtime.protocols.transport import UAgentsTransport
 
-    from runtime.payments.service import PaymentService
-    from runtime.protocols.transport import ProtocolTransport
+if TYPE_CHECKING:
     from shared.db import (
         InboundMessage,
     )
     from shared.settings import Settings
     from shared.types import AgentDefinition, HandlerResponse, MessageHandler
+    from uagents import Context
+
+    from runtime.payments.service import PaymentService
+    from runtime.protocols.transport import ProtocolTransport
 
 logger = logging.getLogger(__name__)
 

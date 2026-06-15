@@ -18,12 +18,12 @@ from runtime.payments.types import (
 from runtime.payments.validation import verify_commit_funds
 
 if TYPE_CHECKING:
-    from uagents_core.contrib.protocols.payment import CommitPayment, Funds
-
-    from runtime.protocols.transport import ProtocolTransport
     from shared.db import AgentRuntime
     from shared.settings import Settings
     from shared.types import PaymentRequest as DevPaymentRequest
+    from uagents_core.contrib.protocols.payment import CommitPayment, Funds
+
+    from runtime.protocols.transport import ProtocolTransport
 
 logger = logging.getLogger(__name__)
 

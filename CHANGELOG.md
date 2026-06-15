@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ---
 
+# [1.0.1]
+
+- Fix Agentverse registration and Docker packaging
+- Fix payment commit validation when multiple payment methods are offered
+- Exclude markdown files from Docker build context
+
+---
+
 # [1.0.0]
 
 **Breaking:** Complete migration to standard uAgents multipod runtime scaffold.

@@ -278,7 +278,7 @@ class Settings:
 
     _instance: ClassVar[Settings | None] = None
 
-    def __new__(cls, *args: object, **kwargs: object) -> Self:  # noqa: ARG004
+    def __new__(cls, *args: object, **kwargs: object) -> Self:
         """Create a new Settings instance.
 
         Args:

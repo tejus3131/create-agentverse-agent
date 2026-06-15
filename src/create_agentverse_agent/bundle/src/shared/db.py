@@ -50,19 +50,23 @@ if TYPE_CHECKING:
 ProtocolName = Literal["chat", "payment"]
 EffectType = Literal["payment_charge", "chat_reply"]
 
-_SILENT_CLAIM_DECISIONS: Final[frozenset[str]] = frozenset({
-    "worker_at_capacity",
-    "worker_draining",
-    "session_busy",
-    "assigned_to_other",
-    "already_processing",
-})
+_SILENT_CLAIM_DECISIONS: Final[frozenset[str]] = frozenset(
+    {
+        "worker_at_capacity",
+        "worker_draining",
+        "session_busy",
+        "assigned_to_other",
+        "already_processing",
+    }
+)
 
-_TERMINAL_ENQUEUE_DECISIONS: Final[frozenset[str]] = frozenset({
-    "completed",
-    "failed",
-    "rejected",
-})
+_TERMINAL_ENQUEUE_DECISIONS: Final[frozenset[str]] = frozenset(
+    {
+        "completed",
+        "failed",
+        "rejected",
+    }
+)
 
 
 # ---------------------------------------------------------------------------
@@ -1207,7 +1211,7 @@ class AgentRuntime:
 
     _instance: ClassVar[AgentRuntime | None] = None
 
-    def __new__(cls, *args: object, **kwargs: object) -> Self:  # noqa: ARG004
+    def __new__(cls, *args: object, **kwargs: object) -> Self:
         """Create a new AgentRuntime instance.
 
         Args:
@@ -1276,7 +1280,7 @@ class AgentRuntime:
         """
         if (
             cls._instance is not None
-            and not cls._instance._closed  # noqa: SLF001
+            and not cls._instance._closed
             and cls._instance.pool.is_open
         ):
             return cls._instance
@@ -1336,7 +1340,7 @@ class AgentRuntime:
             return
         await self.pool.close()
         self._closed = True
-        type(self)._instance = None  # noqa: SLF001
+        type(self)._instance = None
 
     async def startup(self) -> WorkerRecord:
         """Pod startup: heartbeat, bootstrap policy, reclaim stale work.
@@ -1459,8 +1463,8 @@ def get_agent_runtime() -> AgentRuntime:
     Raises:
         RuntimeError: If the runtime has not been opened or is closed.
     """
-    instance = AgentRuntime._instance  # noqa: SLF001
-    if instance is None or instance._closed or not instance.pool.is_open:  # noqa: SLF001
+    instance = AgentRuntime._instance
+    if instance is None or instance._closed or not instance.pool.is_open:
         msg = "AgentRuntime is not open; call AgentRuntime.from_settings() first"
         raise RuntimeError(msg)
     return instance

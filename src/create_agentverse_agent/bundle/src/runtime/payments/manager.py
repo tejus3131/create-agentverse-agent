@@ -487,7 +487,7 @@ def create_payment_request(
 # =============================================================================
 
 
-async def verify_payment(  # noqa: PLR0911
+async def verify_payment(
     transaction_id: TransactionID,
     funds: Funds,
     context: PaymentContext,
