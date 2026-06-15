@@ -7,5 +7,7 @@ __pycache__
 !.env.example
 tests
 *.md
+!README.md
+!AGENTVERSE.md
 .dockerignore
 docker-compose.yml

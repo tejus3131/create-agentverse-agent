@@ -41,7 +41,12 @@ def verify_commit_funds(funds: Funds, active: ActivePayment) -> str | None:
         Error message on mismatch, else ``None``.
     """
     accepted_funds = active.get("accepted_funds")
-    if accepted_funds:
+    if accepted_funds is not None:
+        if not accepted_funds:
+            return (
+                "Payment method mismatch: no accepted methods were stored for this "
+                "payment."
+            )
         matched = _find_accepted_fund(funds, accepted_funds)
         if matched is None:
             return (
@@ -61,7 +66,10 @@ def verify_commit_funds(funds: Funds, active: ActivePayment) -> str | None:
                 f"got {funds.payment_method}."
             )
     else:
-        return None
+        return (
+            "Payment method mismatch: no accepted methods were stored for this "
+            "payment."
+        )
 
     try:
         committed_amount = Decimal(str(funds.amount))
