@@ -151,7 +151,7 @@ def _to_stripe_amount(
 # =============================================================================
 
 
-def create_embedded_checkout_session(
+def create_embedded_checkout_session(  # noqa: PLR0913
     *,
     user_id: UserID,
     session_id: SessionID,

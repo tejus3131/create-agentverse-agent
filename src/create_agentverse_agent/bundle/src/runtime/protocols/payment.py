@@ -6,7 +6,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from shared.db import InboundMessage
 from uagents import Context, Protocol
 from uagents_core.contrib.protocols.payment import (
     CommitPayment,
@@ -15,6 +14,7 @@ from uagents_core.contrib.protocols.payment import (
 )
 
 from runtime.payload import payment_payload_from_outcome
+from shared.db import InboundMessage
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ def setup_payment_protocol(runner: AgentRunner) -> Protocol:
             session_id,
             msg.transaction_id,
         )
-        if runner._pipeline is None or runner.runtime is None:
+        if runner._pipeline is None or runner.runtime is None:  # noqa: SLF001
             logger.error(
                 "payment commit dropped — preflight not complete sender=%s",
                 sender,
@@ -116,7 +116,7 @@ def setup_payment_protocol(runner: AgentRunner) -> Protocol:
             session_id,
             msg.reason,
         )
-        if runner._pipeline is None or runner.runtime is None:
+        if runner._pipeline is None or runner.runtime is None:  # noqa: SLF001
             logger.error(
                 "payment reject dropped — preflight not complete sender=%s",
                 sender,
