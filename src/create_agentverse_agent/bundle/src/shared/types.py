@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
-from uuid import UUID
+from uuid import UUID  # noqa: TC003
 
 from pydantic import (
     BaseModel,

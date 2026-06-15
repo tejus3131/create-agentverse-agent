@@ -5,10 +5,11 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from shared.db import InboundMessage
 from uagents import Context
 from uagents.context import ExternalContext
 from uagents.types import MsgInfo
+
+from shared.db import InboundMessage
 
 
 def external_context_for_inbound(

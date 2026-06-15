@@ -9,8 +9,6 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Protocol
 from uuid import UUID, uuid4
 
-from shared.types import Resource as DevResource
-from shared.types import TextReply
 from uagents import Context
 from uagents_core.contrib.protocols.chat import (
     ChatAcknowledgement,
@@ -26,14 +24,15 @@ from uagents_core.contrib.protocols.payment import (
 )
 
 from runtime.protocols.cards import card_to_metadata_content
+from shared.types import Resource as DevResource
+from shared.types import TextReply
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from runtime.payments.service import PaymentService
     from shared.settings import Settings
     from shared.types import PaymentRequest as DevPaymentRequest
-
-    from runtime.payments.service import PaymentService
 
 
 class ProtocolTransport(Protocol):
@@ -67,12 +66,10 @@ class MockTransport:
     calls: list[tuple[str, dict[str, Any]]] = field(default_factory=list)
 
     async def send_ack(self, recipient: str, message_id: str) -> None:
-        self.calls.append(
-            (
-                "send_ack",
-                {"recipient": recipient, "message_id": message_id},
-            )
-        )
+        self.calls.append((
+            "send_ack",
+            {"recipient": recipient, "message_id": message_id},
+        ))
 
     async def send_text_reply(self, recipient: str, reply: TextReply) -> None:
         self.calls.append(("send_text_reply", {"recipient": recipient, "reply": reply}))
@@ -89,42 +86,34 @@ class MockTransport:
         message_id: str,
         request: DevPaymentRequest,
     ) -> None:
-        self.calls.append(
-            (
-                "send_payment_request",
-                {
-                    "recipient": recipient,
-                    "user_id": user_id,
-                    "session_id": session_id,
-                    "message_id": message_id,
-                    "request": request,
-                },
-            )
-        )
+        self.calls.append((
+            "send_payment_request",
+            {
+                "recipient": recipient,
+                "user_id": user_id,
+                "session_id": session_id,
+                "message_id": message_id,
+                "request": request,
+            },
+        ))
 
     async def send_complete_payment(self, recipient: str, transaction_id: str) -> None:
-        self.calls.append(
-            (
-                "send_complete_payment",
-                {"recipient": recipient, "transaction_id": transaction_id},
-            )
-        )
+        self.calls.append((
+            "send_complete_payment",
+            {"recipient": recipient, "transaction_id": transaction_id},
+        ))
 
     async def send_reject_payment(self, recipient: str, reason: str) -> None:
-        self.calls.append(
-            (
-                "send_reject_payment",
-                {"recipient": recipient, "reason": reason},
-            )
-        )
+        self.calls.append((
+            "send_reject_payment",
+            {"recipient": recipient, "reason": reason},
+        ))
 
     async def send_wire_payment(self, recipient: str, request: RequestPayment) -> None:
-        self.calls.append(
-            (
-                "send_wire_payment",
-                {"recipient": recipient, "request": request},
-            )
-        )
+        self.calls.append((
+            "send_wire_payment",
+            {"recipient": recipient, "request": request},
+        ))
 
 
 class UAgentsTransport:

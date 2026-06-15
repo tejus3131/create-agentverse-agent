@@ -7,8 +7,6 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from pydantic import ValidationError
-from shared.db import InboundMessage
-from shared.types import Resource as DevResource
 from uagents import Context, Protocol
 from uagents_core.contrib.protocols.chat import (
     ChatAcknowledgement,
@@ -27,6 +25,8 @@ from uagents_core.contrib.protocols.chat import (
 from runtime.payload import chat_payload_from_message
 from runtime.protocols.cards import try_parse_card_metadata
 from runtime.protocols.mentions import strip_leading_agent_mention
+from shared.db import InboundMessage
+from shared.types import Resource as DevResource
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +165,7 @@ def setup_chat_protocol(runner: AgentRunner) -> Protocol:
             payload_json=payload,
         )
         logger.info("chat dispatch pipeline msg_id=%s", msg.msg_id)
-        if runner._pipeline is None:
+        if runner._pipeline is None:  # noqa: SLF001
             logger.error(
                 "chat dropped — preflight not complete msg_id=%s sender=%s",
                 msg.msg_id,

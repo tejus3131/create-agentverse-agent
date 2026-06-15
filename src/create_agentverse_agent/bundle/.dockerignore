@@ -6,5 +6,6 @@ __pycache__
 .env.*
 !.env.example
 tests
+*.md
 .dockerignore
 docker-compose.yml

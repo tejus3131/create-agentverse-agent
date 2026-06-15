@@ -7,8 +7,6 @@ import logging
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from shared.db import AgentRuntime, verify_schema
-from shared.settings import SettingsError, get_settings
 from uagents import Agent
 
 from runtime.lifecycle.coordinator import coordinator_tick
@@ -19,15 +17,18 @@ from runtime.pipeline import MessagePipeline
 from runtime.protocols.chat import setup_chat_protocol
 from runtime.protocols.payment import setup_payment_protocol
 from runtime.registration import AGENTVERSE_README_PATH, register_agent_to_agentverse
+from shared.db import AgentRuntime, verify_schema
+from shared.settings import SettingsError, get_settings
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from uagents import Context
+
     from shared.settings import Settings
     from shared.types import AgentDefinition
-    from uagents import Context
 
 _LOG_LEVELS = {
     "DEBUG": logging.DEBUG,
@@ -99,8 +100,10 @@ class AgentRunner:
         return self._agent
 
     def _build_agent(self) -> None:
+
         agent_cfg = self.settings.agent
         runtime_cfg = self.settings.runtime
+
         agent_kwargs: dict[str, object] = {
             "name": agent_cfg.name,
             "port": agent_cfg.port,
