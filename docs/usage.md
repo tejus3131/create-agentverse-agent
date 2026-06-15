@@ -1,34 +1,38 @@
 ---
 layout: default
 title: Usage
-nav_order: 3
+nav_order: 4
 ---
 
 # Usage Guide
 
-This guide covers all CLI options and common usage patterns.
+This page covers the **scaffold CLI** (`create-agentverse-agent`). After scaffolding, you work in a separate generated project with its own `pyproject.toml`, `Makefile`, and runtime — see [Getting Started](getting-started.md).
 
 ---
 
-## Interactive Mode (Recommended)
-
-Launch the interactive wizard to configure your agent step by step:
+## Interactive Mode
 
 ```bash
 uvx create-agentverse-agent
 ```
 
-The wizard will guide you through:
-- Project name and location
-- Agent configuration
-- Feature selection
-- Dependency preferences
+The wizard collects:
+
+- Agent identity (name, handle, description, port)
+- Network (testnet / mainnet)
+- Postgres connection settings
+- Optional Agentverse API key and seed
+
+Use `--advanced` for:
+
+- Payment methods (FET, Stripe, Skyfire)
+- Protocol rate limits and access-control policies
+- Coordinator TTLs (heartbeat, assignment, processing, session lock)
+- Runtime log level
 
 ---
 
-## Quick Start with Defaults
-
-Skip all prompts and generate an agent using sensible defaults:
+## Quick Start
 
 ```bash
 uvx create-agentverse-agent --default
@@ -36,92 +40,66 @@ uvx create-agentverse-agent --default
 uvx create-agentverse-agent -d
 ```
 
-**Best for:** Rapid prototyping, automation, or CI pipelines.
+Defaults: testnet, FET-only payments, local Postgres, auto-generated seed and password.
 
 ---
 
-## Advanced Configuration Mode
-
-Enable advanced mode to access all available configuration options:
-
-```bash
-uvx create-agentverse-agent --advanced
-# or
-uvx create-agentverse-agent -a
-```
-
-This unlocks additional options not shown in standard interactive mode.
-
----
-
-## CLI Options Reference
+## CLI Options
 
 | Option | Short | Description |
 |--------|-------|-------------|
-| `--default` | `-d` | Use default values, skip prompts |
-| `--advanced` | `-a` | Show all configuration options |
-| `--overwrite` | `-o` | Overwrite existing project directory |
-| `--debug` | | Enable debug logging |
-| `--version` | `-v` | Show version and exit |
-| `--help` | | Show help message |
+| `--default` | `-d` | Use defaults, skip prompts |
+| `--advanced` | `-a` | Payment + protocol + runtime options |
+| `--overwrite` | `-o` | Re-scaffold into existing project directory |
+| `--debug` | | Write debug log file |
+| `--version` | `-v` | Show version |
+| `--help` | | Show help |
 
----
+### `--overwrite`
 
-## Overwrite Existing Project
+When the project directory already exists, `--overwrite` re-runs scaffolding into that folder. Template and bundle files are replaced; any extra files you added are left in place.
 
-If a project already exists in the target directory:
+### Project directory name
 
-```bash
-uvx create-agentverse-agent --overwrite
-# or
-uvx create-agentverse-agent -o
-```
+The output folder is named after `agent.handle` from the wizard (e.g. `my-agent/`).
 
-⚠️ **Warning:** This will replace existing files without prompting.
+### Debug logging
 
----
-
-## Debug Mode
-
-Run with debug logging enabled for troubleshooting:
-
-```bash
-uvx create-agentverse-agent --debug
-```
-
-This creates a detailed log file in the current directory:
+With `--debug`, the CLI writes a log file in the current directory:
 
 ```
 create-agentverse-agent-<version>-cli-execution-<uuid>.log
 ```
 
-**Useful for:** Troubleshooting issues or filing bug reports.
+---
+
+## After Scaffolding
+
+```bash
+cd my-agent
+uv sync
+make test
+```
+
+Full stack in Docker: `make run`. See `make help`.
+
+Edit `src/agent/handler.py` to implement your handler.
 
 ---
 
 ## Examples
 
-### Create a new agent interactively
-
 ```bash
+# Interactive
 uvx create-agentverse-agent
-```
 
-### Quick prototype in current directory
-
-```bash
+# Quick prototype
 uvx create-agentverse-agent -d
-```
 
-### Full configuration with overwrite
-
-```bash
+# Full config with overwrite
 uvx create-agentverse-agent -a -o
-```
 
-### Debug a failing scaffold
-
-```bash
+# Debug
 uvx create-agentverse-agent --debug
 ```
 
@@ -129,4 +107,4 @@ uvx create-agentverse-agent --debug
 
 ## Next Steps
 
-Learn about what gets generated in [Generated Structure](structure.md).
+See [Generated Structure](structure.md) and [Configuration](configuration.md).

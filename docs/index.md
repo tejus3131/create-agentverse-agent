@@ -6,80 +6,58 @@ nav_order: 1
 
 # create-agentverse-agent
 
-[![Fetch.ai](https://img.shields.io/badge/Fetch.ai-Ecosystem-blue?logo=fetch.ai&logoColor=white)](https://fetch.ai)
-[![PyPI](https://img.shields.io/pypi/v/create-agentverse-agent?cacheSeconds=300)](https://pypi.org/project/create-agentverse-agent/)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/create-agentverse-agent?cacheSeconds=300)](https://pypi.org/project/create-agentverse-agent/)
-[![License](https://img.shields.io/github/license/tejus3131/create-agentverse-agent)](https://github.com/tejus3131/create-agentverse-agent/blob/main/LICENSE)
-[![CI](https://github.com/tejus3131/create-agentverse-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/tejus3131/create-agentverse-agent/actions/workflows/ci.yml)
+A CLI tool to scaffold **production-ready uAgents** with a Postgres-backed multipod runtime.
 
-A CLI tool to scaffold **production-ready uAgents** with best practices baked in — in seconds.
+Edit **`src/agent/handler.py`**, **`agent.yml`**, **`.env`**, and **`AGENTVERSE.md`** in generated projects. The runtime under `src/runtime/` is wired for you.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
-# No install required (like npx)
-uvx create-agentverse-agent
-
-# Or install globally
-pip install create-agentverse-agent
-create-agentverse-agent
+uvx create-agentverse-agent -d
+cd my-agent
+uv sync
+make test
 ```
 
 ---
 
-## 🎯 Why This Exists
-
-Building agents with **uAgents** is powerful, but setting things up *correctly* every time is not trivial.
-
-This tool solves that by generating a **production-grade agent scaffold** with:
+## What You Get
 
 | Feature | Description |
 |---------|-------------|
-| ⚡ Parallel Processing | Async message handling out of the box |
-| 🧠 Context Logging | Context-aware logging utilities |
-| 📡 Progress Support | Built-in progress/status message support |
-| 🩺 Health Protocol | Health & quota protocol included |
-| 🤖 Agentverse Ready | Compatible with Agentverse deployment |
-| 🧱 Clean Structure | Extensible, maintainable project layout |
-| 🐳 Docker Ready | Docker & Compose templates included |
+| Postgres Runtime | Work queue, session locks, idempotency |
+| Chat + Payment | Protocols with rate limits and ACL |
+| Payments | FET, Stripe, Skyfire (configurable) |
+| Agentverse | Smart registration on startup |
+| Dual Config | `agent.yml` + `.env` |
+| AGENTVERSE.md | Profile readme published on registration |
+| Makefile | `db`, `test`, `run`, `down` |
+| Docker | Compose for local Postgres + agent |
 
 ---
 
-## 📚 Documentation
+## Documentation
 
-- [Installation Guide](installation.md) - Multiple ways to install
-- [Usage Guide](usage.md) - CLI options and examples
-- [Generated Structure](structure.md) - What gets created
-- [Configuration](configuration.md) - Customization options
-
----
-
-## 👥 Who Is This For?
-
-- **uAgents developers** building production agents
-- **Agentverse builders** deploying to the ecosystem
-- **Hackathon teams** who need fast, reliable scaffolds
-- **Python developers** who want clean CLI workflows
-
-If you build agents more than once — this saves you time.
+- [Installation Guide](installation.md)
+- [Getting Started](getting-started.md)
+- [Usage Guide](usage.md)
+- [Generated Structure](structure.md)
+- [Configuration](configuration.md)
+- [Architecture](architecture.md)
+- [Handler Guide](handler.md)
+- [Agentverse](agentverse.md)
+- [Migration from 0.2.x](migration.md)
 
 ---
 
-## 🔗 Links
+## Links
 
-- [PyPI Package](https://pypi.org/project/create-agentverse-agent/)
-- [GitHub Repository](https://github.com/tejus3131/create-agentverse-agent)
-- [Issue Tracker](https://github.com/tejus3131/create-agentverse-agent/issues)
+- [PyPI](https://pypi.org/project/create-agentverse-agent/)
+- [GitHub](https://github.com/tejus3131/create-agentverse-agent)
 - [Changelog](https://github.com/tejus3131/create-agentverse-agent/blob/main/CHANGELOG.md)
 
 ---
 
-## 📄 License
-
-MIT License. See [LICENSE](https://github.com/tejus3131/create-agentverse-agent/blob/main/LICENSE) for details.
-
----
-
-Made with ❤️ by [Tejus Gupta](https://tejusgupta.dev)
+MIT License — [Tejus Gupta](https://tejusgupta.dev)

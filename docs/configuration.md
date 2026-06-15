@@ -1,134 +1,155 @@
 ---
 layout: default
 title: Configuration
-nav_order: 5
+nav_order: 6
 ---
 
 # Configuration
 
-This guide covers how to configure your generated agent and customize the scaffold.
+Generated projects use two configuration layers:
+
+- **`agent.yml`** — structured, non-secret settings (committed to git)
+- **`.env`** — secrets and credentials (never commit)
+
+The scaffold writes `.env` directly. **`.env.example`** is copied into the project as a reference for available variables.
 
 ---
 
-## Environment Variables
+## agent.yml
 
-The generated `.env` file contains essential configuration:
+### Agent identity
+
+```yaml
+agent:
+  name: "My Agent"
+  description: "What this agent does"
+  handle: "my-agent"        # lowercase slug; also the project directory name
+  port: 8000
+  avatar_url: https://storage.googleapis.com/agentverse-prod-assets/agent-avatars-pub/1555524032.png
+  banner_url: https://storage.googleapis.com/agentverse-prod-assets/agent-banners-pub/360350005.png
+  geo_location: null
+```
+
+**Avatar and banner** are Agentverse profile assets. Defaults come from the scaffold; override in `agent.yml`.
+
+**`geo_location`** (optional): latitude, longitude, and radius (meters). Set when you want location metadata on Agentverse:
+
+```yaml
+geo_location:
+  latitude: 51.5074
+  longitude: -0.1278
+  radius: 0
+```
+
+### Protocols
+
+Both `chat` and `payment` support:
+
+- `maximum_processing_time_seconds`
+- `rate_limits.session` / `rate_limits.user` (`max_requests` + `window`)
+- `rate_limits.exemptions` (`policy`: none | all | allow | deny)
+- `access_control` (`policy`: all | none | allow | deny)
+
+Rate limit **window** format: duration strings like `30s`, `1m`, `2h`.
+
+Payment protocol additionally has:
+
+```yaml
+protocols:
+  payment:
+    methods:
+      fet: enabled      # enabled | disabled
+      skyfire: disabled
+      stripe: disabled
+```
+
+**Defaults with `-d` / `--default`:** FET enabled, Stripe and Skyfire disabled.
+
+**Note:** Enabling `stripe` or `skyfire` requires the corresponding secrets in `.env`.
+
+### Runtime
+
+```yaml
+runtime:
+  log_level: INFO
+  max_concurrent_sessions: 5
+  mailbox: true
+  network: testnet        # testnet | mainnet
+  coordinator:
+    heartbeat_interval_seconds: 20
+    assignment_ttl_seconds: 90
+    processing_ttl_seconds: 180
+    session_lock_ttl_seconds: 180
+    reclaim_worker_stale_seconds: 45
+```
+
+---
+
+## AGENTVERSE.md
+
+| File | Purpose |
+|------|---------|
+| `agent.yml` → `agent.description` | Short summary on Agentverse |
+| `AGENTVERSE.md` | Long profile readme (markdown) |
+| `README.md` | Developer docs for your repo (not sent to Agentverse) |
+
+`AGENTVERSE.md` is read at startup and sent to Agentverse when `AGENTVERSE_API_KEY` is set. See [Agentverse](agentverse.md).
+
+---
+
+## Environment Variables (.env)
 
 ```env
-# Environment Configuration
-ENV=
-
-# API Keys
+# Agentverse (optional)
 AGENTVERSE_API_KEY=
+AGENT_SEED=
 
-# Agent Configuration
-AGENT_NAME=
-AGENT_SEED_PHRASE=
-AGENT_PORT=
-AGENT_ROUTE=
-AGENT_HANDLE=
+# Postgres (required)
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DATABASE=agent
+POSTGRES_USER=agent_pod
+POSTGRES_PASSWORD=
 
-# Hosting Configuration
-HOSTING_ENDPOINT=
+# Stripe (required when stripe enabled in agent.yml)
+STRIPE_SECRET_KEY=
+STRIPE_PUBLISHABLE_KEY=
 
-# Message Processing Configuration
-MAX_PROCESSED_MESSAGES=
-PROCESSED_MESSAGE_TTL_MINUTES=
-CLEANUP_INTERVAL_SECONDS=
+# Skyfire (required when skyfire enabled in agent.yml)
+SKYFIRE_API_KEY=
+SKYFIRE_SELLER_ACCOUNT_ID=
+SKYFIRE_SERVICE_ID=
 
-# Rate limiting configuration
-RATE_LIMIT_MAX_REQUESTS=
-RATE_LIMIT_WINDOW_MINUTES=
+# Optional FET LCD override
+# FET_LCD_URL=
+
+# Docker Compose port mapping
+AGENT_PORT=8000
 ```
 
-## Project Customization
+### `AGENT_SEED`
 
-### Adding Dependencies
-
-Edit `pyproject.toml` to add dependencies:
-
-```toml
-[project]
-dependencies = [
-    "uagents>=0.10.0",
-    "your-package>=1.0.0",  # Add here
-]
-```
-
-Then install:
-
-```bash
-pip install -e .
-# or
-poetry install
-```
-
-## Docker Configuration
-
-### Running with Docker Compose
-
-```bash
-docker-compose up
-# or
-make up
-```
-
-### Custom Docker Configuration
-
-Edit `docker-compose.yml` for:
-
-- Port mappings
-- Volume mounts
-- Environment overrides
-- Network settings
+Holds the agent wallet seed phrase. In 0.2.x scaffolds this was `AGENT_SEED_PHRASE` — rename when migrating. See [Migration](migration.md).
 
 ---
 
-## Deployment
-
-### Local Development
+## Local Development
 
 ```bash
-make dev
-# or
-poetry run python main.py
+docker compose up -d   # or: make db
+uv sync
+uv run agent           # or: make test
 ```
-
-### Agentverse Deployment
-
-1. Set your `AGENTVERSE_API_KEY` in `.env`
-2. Configure your agent endpoint
-3. Register with Agentverse
-
-See the [Agentverse documentation](https://fetch.ai/docs) for detailed deployment instructions.
 
 ---
 
 ## Troubleshooting
 
-### Debug Logging
+**Postgres not reachable:** Run `docker compose up -d` and confirm `POSTGRES_HOST` / `POSTGRES_PORT` in `.env`.
 
-Enable debug output:
+**Payment config invalid:** Disable unused payment methods in `agent.yml` or add required provider keys to `.env`.
 
-```bash
-uvx create-agentverse-agent --debug
-```
-
-### Common Issues
-
-**Agent not connecting:**
-- Check your `AGENT_SEED` is set
-- Verify network connectivity
-- Ensure correct endpoint configuration
-
-**Import errors:**
-- Run `pip install -e .` to install in development mode
-- Check Python version compatibility
-
-**Docker build fails:**
-- Verify Docker is running
-- Check for syntax errors in Dockerfile
-- Ensure all files are committed
+**Schema not found:** `schema.sql` is applied on first Postgres container boot via Docker Compose.
 
 ---
 

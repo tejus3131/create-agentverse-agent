@@ -20,7 +20,38 @@ uvx create-agentverse-agent
 
 This downloads and runs the latest version in an isolated environment. Perfect for one-off usage or trying out the tool.
 
-**Requirements:** [uv](https://github.com/astral-sh/uv) must be installed.
+**Requirements:** [uv](https://github.com/astral-sh/uv) must be installed. Python **3.12+** for the CLI itself.
+
+---
+
+## Local Development (CLI contributors)
+
+Run the CLI from a local checkout without publishing:
+
+```bash
+uvx --from /path/to/create-agentverse-agent create-agentverse-agent -d
+```
+
+Or install editable:
+
+```bash
+uv tool install --editable .
+create-agentverse-agent --version
+```
+
+See [CONTRIBUTING.md](https://github.com/tejus3131/create-agentverse-agent/blob/main/CONTRIBUTING.md) for `make check` and bundle sync.
+
+---
+
+## Generated Project Requirements
+
+Scaffolded agents are separate projects with their own toolchain:
+
+| Requirement | Why |
+|-------------|-----|
+| Python **3.13** | Locked in generated `pyproject.toml` |
+| [uv](https://github.com/astral-sh/uv) | Dependency management (`uv sync`) |
+| Docker | Local Postgres via `docker compose` / `make db` |
 
 ---
 
@@ -59,7 +90,7 @@ poetry add create-agentverse-agent
 poetry run create-agentverse-agent
 ```
 
-**Best for:** Projects already using Poetry for dependency management.
+**Note:** Poetry installs the **scaffolder CLI only**. Generated agent projects use **uv** and **hatch**, not Poetry.
 
 ---
 
@@ -77,4 +108,4 @@ You should see the current version number printed.
 
 ## Next Steps
 
-Once installed, head to the [Usage Guide](usage.md) to learn how to create your first agent.
+Once installed, head to [Getting Started](getting-started.md) or the [Usage Guide](usage.md).

@@ -4,6 +4,22 @@ All notable changes to this project are documented here.
 
 ---
 
+# [1.0.0]
+
+**Breaking:** Complete migration to standard uAgents multipod runtime scaffold.
+
+- New generated layout: `agent.yml` + `.env`, nested `src/runtime`, `src/shared`, `src/agent`
+- Postgres-backed coordination via bundled `schema.sql` and Docker Compose
+- Chat + payment protocols, FET/Stripe/Skyfire payments (configurable)
+- uv + Python 3.13 generated projects (replaces Poetry flat scaffold)
+- Static runtime bundle copied from [standard-uagents-setup](https://github.com/tejus3131/standard-uagents-setup)
+- Removed legacy flat templates (`main.py`, `agent.py`, Makefile, etc.)
+- CLI wizard rewritten: identity, network, Postgres, Agentverse, advanced payments
+- Default payment config: FET enabled, Stripe/Skyfire disabled
+- Fixed cancel handlers (proper exit code), ScaffoldError handling
+
+---
+
 # [0.2.7]
 
 - Fixed hosting settings option in advanced mode.

@@ -10,11 +10,12 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.text import Text
 
 from .prompts import UserAbortError
+from .scaffold import ScaffoldError
 
 logger = logging.getLogger("create-agentverse-agent")
 
 app = typer.Typer(
-    help="✨ Create an AgentVerse agent with style.",
+    help="✨ Scaffold a production-ready uAgents project.",
     add_completion=False,
     rich_markup_mode="rich",
 )
@@ -23,8 +24,6 @@ console = Console()
 
 class CLIStopExecution(typer.Exit):
     """Custom exception to stop CLI execution."""
-
-    pass
 
 
 def version_callback(show_version: bool) -> None:
@@ -67,7 +66,7 @@ def main(
         bool,
         typer.Option(
             "--debug",
-            help="Show debug logs in 'create-agentverse-agent-<version>-cli-execution-<uuid>.log'",
+            help="Write debug log to create-agentverse-agent-<version>-cli-execution-<uuid>.log",
         ),
     ] = False,
     _: Annotated[
@@ -82,7 +81,7 @@ def main(
     ] = False,
 ) -> None:
     """
-    Create an AgentVerse agent with an interactive wizard.
+    Scaffold a production-ready uAgents project with an interactive wizard.
 
     [bold cyan]Examples:[/bold cyan]
 
@@ -95,9 +94,10 @@ def main(
       [dim]# Advanced configuration[/dim]
       create-agentverse-agent -a
     """
-    # Set logging level based on verbose flag
-
-    execution_id = f"create-agentverse-agent-{version('create-agentverse-agent')}-cli-execution-{uuid4()}"
+    execution_id = (
+        f"create-agentverse-agent-{version('create-agentverse-agent')}"
+        f"-cli-execution-{uuid4()}"
+    )
 
     if debug:
         logging.basicConfig(
@@ -105,27 +105,16 @@ def main(
             filename=f"{execution_id}.log",
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         )
-        logger.debug("Verbose logging enabled")
     else:
-        logging.basicConfig(
-            level=logging.CRITICAL,
-        )
-
-    logger.debug(
-        f"CLI options: default={default}, advanced={advanced}, overwrite={overwrite}"
-    )
+        logging.basicConfig(level=logging.CRITICAL)
 
     try:
         from .prompts import collect_configuration
-
-        logger.info("Starting configuration collection")
-        config = collect_configuration(default=default, advanced=advanced)
-        logger.debug(f"Configuration collected: display_name={config.display_name}")
-
         from .scaffold import Scaffolder
         from .templates import TemplateRenderer
 
-        # Show progress with spinner
+        config = collect_configuration(default=default, advanced=advanced)
+
         console.print()
         with Progress(
             SpinnerColumn(),
@@ -133,21 +122,14 @@ def main(
             console=console,
             transient=True,
         ) as progress:
-            progress.add_task(f"Creating agent '{config.display_name}'...", total=None)
-
-            logger.debug("Initializing template renderer")
+            progress.add_task(
+                f"Creating project '{config.display_name}'...", total=None
+            )
             renderer = TemplateRenderer()
-
-            logger.debug("Initializing scaffolder")
             scaffolder = Scaffolder(renderer)
-
-            logger.info(f"Creating project with overwrite={overwrite}")
             project_path = scaffolder.create_project(config, overwrite=overwrite)
-            logger.debug(f"Project created at: {project_path.absolute()}")
 
-        # Success message with clear next steps
         success_text = Text()
-
         success_text.append("📍 Project Location\n", style="bold cyan")
         success_text.append(f"   {project_path.absolute()}\n", style="bold white")
         success_text.append("\n")
@@ -156,78 +138,67 @@ def main(
         success_text.append("1. Navigate to your project\n", style="bold yellow")
         success_text.append(f"   cd {project_path}\n", style="bold white")
         success_text.append("\n")
-        success_text.append("2. Start your agent\n", style="bold yellow")
-        success_text.append(
-            f"   make {"run" if config.is_api_keys_provided() else "dev"}\n",
-            style="bold white",
-        )
+        success_text.append("2. Install dependencies\n", style="bold yellow")
+        success_text.append("   uv sync\n", style="bold white")
         success_text.append("\n")
+        success_text.append("3. Run locally\n", style="bold yellow")
+        success_text.append("   make test\n", style="bold white")
+        success_text.append("\n")
+        success_text.append("─" * 57 + "\n", style="dim blue")
         success_text.append(
-            "─────────────────────────────────────────────────────────\n",
+            "💡 make help — db, test, run, down | edit src/agent/handler.py",
             style="dim blue",
         )
-        success_text.append(
-            "💡 Tip: Run 'make' to see available commands", style="dim blue"
-        )
 
-        # Show hint about missing API keys
-        if config.agentverse_api_key is None:
+        if not config.is_agentverse_configured():
             success_text.append("\n\n")
             success_text.append(
-                "⚠️  Don't forget to add your AGENTVERSE_API_KEY to the .env file",
+                "⚠️  Add AGENTVERSE_API_KEY to .env for Agentverse registration",
                 style="yellow",
             )
 
-        success_panel = Panel(
-            success_text,
-            title="Agent Created Successfully!",
-            border_style="green",
-            padding=(1, 2),
+        console.print(
+            Panel(
+                success_text,
+                title="Project Created Successfully!",
+                border_style="green",
+                padding=(1, 2),
+            )
         )
-
-        console.print(success_panel)
         console.print()
-
-        logger.info("Agent created successfully")
 
     except UserAbortError:
-        logger.warning("Setup cancelled by user")
-        console.print()
         console.print()
         console.print("[yellow]   ✖  Setup cancelled by user[/yellow]")
         console.print()
-        UserAbortError()
+        raise typer.Abort() from None
 
-    except FileExistsError as e:
-        logger.error(f"Project already exists: {e}")
+    except ScaffoldError as exc:
         console.print()
         console.print("[bold red]   ✖  Error: Project already exists[/bold red]")
-        console.print(f"[dim red]   {e}[/dim red]")
+        console.print(f"[dim red]   {exc}[/dim red]")
         console.print()
         console.print(
             "[dim yellow]   💡 Use --overwrite flag to replace the existing project[/dim yellow]"
         )
         console.print()
-        typer.Abort()
+        raise typer.Abort() from exc
 
     except KeyboardInterrupt:
-        logger.warning("Setup interrupted by keyboard")
-        console.print()
         console.print()
         console.print("[yellow]   ✖  Setup cancelled by user[/yellow]")
         console.print()
-        UserAbortError()
+        raise typer.Abort() from None
 
-    except Exception as e:
-        logger.exception(f"Failed to create agent: {e}")
+    except Exception as exc:
+        logger.exception("Failed to create project: %s", exc)
         console.print()
-        console.print("[bold red]   ✖  Failed to create agent[/bold red]")
-        console.print(f"[dim red]   {e}[/dim red]")
+        console.print("[bold red]   ✖  Failed to create project[/bold red]")
+        console.print(f"[dim red]   {exc}[/dim red]")
         console.print()
-        typer.Abort()
+        raise typer.Abort() from exc
 
     finally:
-        logger.debug("CLI execution completed")
         if debug:
             console.print(
                 f"[dim yellow]   💡 Debug log saved to '{execution_id}.log'[/dim yellow]"

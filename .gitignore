@@ -52,10 +52,12 @@ Thumbs.db
 
 # Environment / secrets
 .env
-.env.*
 
 # Jekyll build output
 docs/_site/
+
+# Local scaffold artifacts
+agent-*/
 
 # Bundler
 docs/.bundle/
